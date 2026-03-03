@@ -1,0 +1,260 @@
+.admin-dashboard {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+.admin-dashboard h1 {
+  color: #1f2937;
+  margin-bottom: 2rem;
+  font-size: 2.5rem;
+}
+
+.dashboard-section {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-section h2 {
+  color: #374151;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+/* Charts Container */
+.charts-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.chart-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 400px;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Table Section */
+.table-section {
+  overflow-x: auto;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.risk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.risk-table thead {
+  background-color: #f3f4f6;
+}
+
+.risk-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.risk-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #1f2937;
+}
+
+.risk-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Risk Level Styling */
+.risk-table tr.risk-high {
+  border-left: 4px solid #ef4444;
+}
+
+.risk-table tr.risk-medium {
+  border-left: 4px solid #f59e0b;
+}
+
+.risk-table tr.risk-low {
+  border-left: 4px solid #10b981;
+}
+
+/* Risk Badge */
+.risk-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.risk-badge.risk-high {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.risk-badge.risk-medium {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.risk-badge.risk-low {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+/* Action Button */
+.action-button {
+  background-color: #8b5cf6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.action-button:hover {
+  background-color: #7c3aed;
+}
+
+.action-button:active {
+  transform: scale(0.98);
+}
+
+/* Dashboard Actions */
+.dashboard-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.refresh-button {
+  background-color: #8b5cf6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.refresh-button:hover {
+  background-color: #7c3aed;
+}
+
+.refresh-button:active {
+  transform: scale(0.98);
+}
+
+/* Loading State */
+.dashboard-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  font-size: 1.25rem;
+  color: #6b7280;
+}
+
+/* Error State */
+.dashboard-error {
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .charts-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard {
+    padding: 1rem;
+  }
+
+  .admin-dashboard h1 {
+    font-size: 1.875rem;
+  }
+
+  .dashboard-section {
+    padding: 1rem;
+  }
+
+  .chart-wrapper {
+    height: 300px;
+  }
+
+  .risk-table {
+    font-size: 0.85rem;
+  }
+
+  .risk-table th,
+  .risk-table td {
+    padding: 0.75rem;
+  }
+
+  .risk-table tr {
+    border-left: none !important;
+  }
+
+  .action-button {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-dashboard h1 {
+    font-size: 1.5rem;
+  }
+
+  .dashboard-section h2 {
+    font-size: 1.25rem;
+  }
+
+  .risk-table {
+    font-size: 0.75rem;
+  }
+
+  .risk-table th,
+  .risk-table td {
+    padding: 0.5rem;
+  }
+
+  .action-button {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.65rem;
+  }
+}

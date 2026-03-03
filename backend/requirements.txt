@@ -1,0 +1,53 @@
+# ==============================
+# FastAPI Core
+# ==============================
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.12
+
+# ==============================
+# Database
+# ==============================
+sqlalchemy>=2.0.25
+psycopg2-binary>=2.9.12
+alembic>=1.14.0
+
+# ==============================
+# Authentication & Security
+# ==============================
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.1.4
+python-jose>=3.3.0
+
+# ==============================
+# Environment Variables
+# ==============================
+python-dotenv>=1.0.1
+
+# ==============================
+# Data Science / ML
+# ==============================
+numpy>=1.26.4
+pandas>=2.2.3
+scikit-learn>=1.4.2
+joblib>=1.4.2
+
+# ==============================
+# Visualization (Training only)
+# ==============================
+matplotlib>=3.8.4
+seaborn>=0.13.2
+
+# ==============================
+# Validation
+# ==============================
+pydantic>=2.9.0
+pydantic-settings>=2.2.0
+email-validator>=2.1.1
+
+# ==============================
+# Development & Optimization
+# ==============================
+# Optional: Add these for production
+# gunicorn>=22.0.0
+# python-json-logger>=2.0.7
