@@ -11,6 +11,11 @@ class EnrollmentCreate(BaseModel):
     completed: bool = Field(default=False)
 
 
+class EnrollmentCreateRequest(BaseModel):
+    """Schema for enrollment request from frontend (just course_id)"""
+    course_id: int
+
+
 class EnrollmentUpdate(BaseModel):
     """Schema for updating an enrollment"""
     progress_percentage: Optional[float] = Field(default=None, ge=0.0, le=100.0)
@@ -47,6 +52,21 @@ class EnrollmentDetailResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CourseBasicInfo(BaseModel):
+    """Basic course information for embedding in enrollments"""
+    id: int
+    title: str
+    description: Optional[str] = None
+    track_type: str
+    level: str
+    duration_hours: Optional[float] = 0.0
+    instructor: Optional[str] = "ElevateED Instructor"
+    rating: Optional[float] = 0.0
+    thumbnail_url: Optional[str] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
 class StudentEnrollmentsResponse(BaseModel):
     """Schema for student's list of enrollments"""
     id: int
@@ -54,6 +74,7 @@ class StudentEnrollmentsResponse(BaseModel):
     completed: bool
     enrolled_at: datetime
     course_id: int
+    course: Optional[CourseBasicInfo] = None
     
     model_config = ConfigDict(from_attributes=True)
 

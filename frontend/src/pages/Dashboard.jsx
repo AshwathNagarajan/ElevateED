@@ -1,9 +1,11 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { BookOpen, GraduationCap, Lightbulb, ArrowRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import StudentDashboard from '../components/StudentDashboard'
 
 const Dashboard = () => {
+  const { t } = useTranslation()
   // For admin role, we could render AdminDashboard instead
   // For now, we'll show the student dashboard with navigation cards
 
@@ -22,8 +24,8 @@ const Dashboard = () => {
             </div>
             <ArrowRight className="text-blue-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" size={20} />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Explore Courses</h3>
-          <p className="text-sm text-gray-600">Browse all available courses and find your next learning adventure.</p>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{t('dashboard.exploreCourses')}</h3>
+          <p className="text-sm text-gray-600">{t('dashboard.exploreCoursesDesc')}</p>
         </Link>
 
         {/* My Courses */}
@@ -37,8 +39,8 @@ const Dashboard = () => {
             </div>
             <ArrowRight className="text-green-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all" size={20} />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">My Courses</h3>
-          <p className="text-sm text-gray-600">Continue your enrolled courses and track your progress.</p>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{t('dashboard.myCoursesTitle')}</h3>
+          <p className="text-sm text-gray-600">{t('dashboard.myCoursesDesc')}</p>
         </Link>
 
         {/* Recommendations */}
@@ -52,8 +54,8 @@ const Dashboard = () => {
             </div>
             <ArrowRight className="text-purple-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" size={20} />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Recommendations</h3>
-          <p className="text-sm text-gray-600">Get personalized course suggestions based on your learning.</p>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{t('dashboard.recommendationsTitle')}</h3>
+          <p className="text-sm text-gray-600">{t('dashboard.recommendationsDesc')}</p>
         </Link>
       </div>
 

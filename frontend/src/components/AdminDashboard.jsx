@@ -11,7 +11,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
-import { RefreshCw, AlertCircle, Mail } from 'lucide-react'
+import { RefreshCw, AlertCircle, Users, BookOpen, TrendingUp, Award } from 'lucide-react'
 
 // Register ChartJS components
 ChartJS.register(
@@ -25,10 +25,25 @@ ChartJS.register(
   Legend
 )
 
+const API_BASE_URL = 'http://localhost:8000/api'
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+}
+
 const AdminDashboard = () => {
   const [trackDistribution, setTrackDistribution] = useState([])
-  const [skillScores, setSkillScores] = useState([])
-  const [dropoutRiskStudents, setDropoutRiskStudents] = useState([])
+  const [courseStats, setCourseStats] = useState([])
+  const [overviewStats, setOverviewStats] = useState({
+    totalCourses: 0,
+    totalEnrollments: 0,
+    overallCompletion: 0,
+    avgQuizScore: 0
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -41,30 +56,71 @@ const AdminDashboard = () => {
       setLoading(true)
       setError(null)
 
-      // Mock data
-      const mockTrackDistribution = [
-        { track: 'Math', count: 150 },
-        { track: 'Science', count: 120 },
-        { track: 'English', count: 100 },
-        { track: 'Arts', count: 80 },
-      ]
+      // Fetch course completion stats
+      let completionData = null
+      try {
+        const completionRes = await fetch(`${API_BASE_URL}/analytics/course-completion-rate`, {
+          headers: getAuthHeaders()
+        })
+        if (completionRes.ok) {
+          completionData = await completionRes.json()
+        }
+      } catch (e) {
+        console.warn('Failed to fetch completion data:', e)
+      }
 
-      const mockSkillScores = [
-        { track: 'Math', averageScore: 78 },
-        { track: 'Science', averageScore: 82 },
-        { track: 'English', averageScore: 75 },
-        { track: 'Arts', averageScore: 88 },
-      ]
+      // Fetch quiz score stats
+      try {
+        const quizRes = await fetch(`${API_BASE_URL}/analytics/average-quiz-score`, {
+          headers: getAuthHeaders()
+        })
+        if (quizRes.ok) {
+          const quizData = await quizRes.json()
+          setOverviewStats(prev => ({
+            ...prev,
+            avgQuizScore: quizData.overall_average_score || 0
+          }))
+        }
+      } catch (e) {
+        console.warn('Failed to fetch quiz data:', e)
+      }
 
-      const mockDropoutRisks = [
-        { id: 1, name: 'John Doe', track: 'Math', attendance: 45, averageScore: 35, riskLevel: 'High' },
-        { id: 2, name: 'Jane Smith', track: 'Science', attendance: 65, averageScore: 52, riskLevel: 'Medium' },
-        { id: 3, name: 'Bob Wilson', track: 'English', attendance: 40, averageScore: 30, riskLevel: 'High' },
-      ]
+      // Fetch active learners (for future use)
+      try {
+        await fetch(`${API_BASE_URL}/analytics/active-learners`, {
+          headers: getAuthHeaders()
+        })
+      } catch (e) {
+        console.warn('Failed to fetch active learners:', e)
+      }
 
-      setTrackDistribution(mockTrackDistribution)
-      setSkillScores(mockSkillScores)
-      setDropoutRiskStudents(mockDropoutRisks)
+      // Process course completion data for track distribution
+      if (completionData && completionData.courses) {
+        // Group courses by track_type
+        const trackGroups = {}
+        completionData.courses.forEach(course => {
+          const track = course.course_title.split(' ')[0] // Simplified track extraction
+          if (!trackGroups[track]) {
+            trackGroups[track] = 0
+          }
+          trackGroups[track] += course.total_enrollments
+        })
+        
+        const trackData = Object.entries(trackGroups).map(([track, count]) => ({
+          track,
+          count
+        }))
+        setTrackDistribution(trackData)
+        setCourseStats(completionData.courses || [])
+        
+        setOverviewStats(prev => ({
+          ...prev,
+          totalCourses: completionData.total_courses || 0,
+          totalEnrollments: completionData.total_enrollments || 0,
+          overallCompletion: completionData.overall_completion_rate || 0
+        }))
+      }
+
       setLoading(false)
     } catch (err) {
       setError(err.message)
@@ -106,11 +162,11 @@ const AdminDashboard = () => {
   }
 
   const barChartData = {
-    labels: skillScores.map(item => item.track),
+    labels: courseStats.slice(0, 8).map(item => item.course_title?.substring(0, 15) + '...' || 'Course'),
     datasets: [
       {
-        label: 'Average Skill Score',
-        data: skillScores.map(item => item.averageScore),
+        label: 'Completion Rate (%)',
+        data: courseStats.slice(0, 8).map(item => item.completion_rate || 0),
         backgroundColor: '#9333ea',
         borderColor: '#7c3aed',
         borderWidth: 1,
@@ -128,7 +184,7 @@ const AdminDashboard = () => {
       },
       title: {
         display: true,
-        text: 'Average Skill Scores by Track',
+        text: 'Course Completion Rates',
       },
     },
     scales: {
@@ -137,32 +193,6 @@ const AdminDashboard = () => {
         max: 100,
       },
     },
-  }
-
-  const getRiskColor = (level) => {
-    switch (level) {
-      case 'High':
-        return 'bg-red-50 border-l-4 border-red-600'
-      case 'Medium':
-        return 'bg-yellow-50 border-l-4 border-yellow-600'
-      case 'Low':
-        return 'bg-green-50 border-l-4 border-green-600'
-      default:
-        return 'bg-gray-50'
-    }
-  }
-
-  const getRiskBadgeColor = (level) => {
-    switch (level) {
-      case 'High':
-        return 'bg-red-100 text-red-800'
-      case 'Medium':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'Low':
-        return 'bg-green-100 text-green-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
   }
 
   if (loading) {
@@ -190,93 +220,126 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* Overview Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="card-lg bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-purple-600 rounded-lg">
+              <BookOpen className="text-white" size={24} />
+            </div>
+            <div>
+              <p className="text-sm text-purple-600 font-medium">Total Courses</p>
+              <p className="text-2xl font-bold text-purple-900">{overviewStats.totalCourses}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="card-lg bg-gradient-to-br from-cyan-50 to-cyan-100 border border-cyan-200">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-cyan-600 rounded-lg">
+              <Users className="text-white" size={24} />
+            </div>
+            <div>
+              <p className="text-sm text-cyan-600 font-medium">Total Enrollments</p>
+              <p className="text-2xl font-bold text-cyan-900">{overviewStats.totalEnrollments}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="card-lg bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-green-600 rounded-lg">
+              <TrendingUp className="text-white" size={24} />
+            </div>
+            <div>
+              <p className="text-sm text-green-600 font-medium">Completion Rate</p>
+              <p className="text-2xl font-bold text-green-900">{overviewStats.overallCompletion}%</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="card-lg bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-orange-600 rounded-lg">
+              <Award className="text-white" size={24} />
+            </div>
+            <div>
+              <p className="text-sm text-orange-600 font-medium">Avg Quiz Score</p>
+              <p className="text-2xl font-bold text-orange-900">{overviewStats.avgQuizScore.toFixed(1)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Pie Chart - Track Distribution */}
         <div className="card-lg">
-          <h2 className="section-title">Track Distribution</h2>
+          <h2 className="section-title">Enrollment Distribution</h2>
           {trackDistribution.length > 0 ? (
             <div className="relative h-96">
               <Pie data={pieChartData} options={pieChartOptions} />
             </div>
           ) : (
-            <p className="text-gray-500">No track distribution data available</p>
+            <p className="text-gray-500">No enrollment data available</p>
           )}
         </div>
 
-        {/* Bar Chart - Average Skill Scores */}
+        {/* Bar Chart - Course Completion Rates */}
         <div className="card-lg">
-          <h2 className="section-title">Average Skill Scores</h2>
-          {skillScores.length > 0 ? (
+          <h2 className="section-title">Course Completion Rates</h2>
+          {courseStats.length > 0 ? (
             <div className="relative h-96">
               <Bar data={barChartData} options={barChartOptions} />
             </div>
           ) : (
-            <p className="text-gray-500">No skill score data available</p>
+            <p className="text-gray-500">No course data available</p>
           )}
         </div>
       </div>
 
-      {/* Dropout Risk Students Table */}
+      {/* Course Details Table */}
       <div className="card-lg mb-8">
-        <h2 className="section-title">Students at Risk of Dropout</h2>
-        {dropoutRiskStudents.length > 0 ? (
+        <h2 className="section-title">Course Performance</h2>
+        {courseStats.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-100 border-b border-gray-200">
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                    Student ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                    Track
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                    Attendance
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                    Avg Score
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                    Risk Level
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                    Action
-                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Course</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Enrollments</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Completed</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">In Progress</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Completion Rate</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Avg Progress</th>
                 </tr>
               </thead>
               <tbody>
-                {dropoutRiskStudents.map((student) => (
-                  <tr
-                    key={student.id}
-                    className={`border-b border-gray-200 hover:bg-gray-50 ${getRiskColor(student.riskLevel)}`}
-                  >
-                    <td className="px-6 py-4 text-sm text-gray-900">{student.id}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{student.name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{student.track}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{student.attendance}%</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{student.averageScore}</td>
+                {courseStats.map((course) => (
+                  <tr key={course.course_id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{course.course_title}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{course.total_enrollments}</td>
+                    <td className="px-6 py-4 text-sm text-green-600 font-medium">{course.completed_count}</td>
+                    <td className="px-6 py-4 text-sm text-yellow-600 font-medium">{course.in_progress_count}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRiskBadgeColor(student.riskLevel)}`}>
-                        {student.riskLevel}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-24 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-primary-600 h-2 rounded-full" 
+                            style={{ width: `${course.completion_rate}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-700">{course.completion_rate}%</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <button className="flex items-center gap-2 px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors text-sm font-medium">
-                        <Mail size={16} />
-                        Contact
-                      </button>
-                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{course.average_progress}%</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <p className="text-gray-500">No students at dropout risk</p>
+          <p className="text-gray-500">No course data available</p>
         )}
       </div>
 

@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Search, Filter, BookOpen, Clock, Users, Star, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const Courses = () => {
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,6 +24,14 @@ const Courses = () => {
   const [level, setLevel] = useState(searchParams.get('level') || '')
   const [searchQuery, setSearchQuery] = useState('')
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token')
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    }
+  }
+
   useEffect(() => {
     fetchFilterOptions()
   }, [])
@@ -30,16 +42,24 @@ const Courses = () => {
 
   const fetchFilterOptions = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/courses/filter-options')
-      // const data = await response.json()
-      
-      setFilterOptions({
-        track_types: ['Math', 'Science', 'Language', 'Technology', 'Arts'],
-        levels: ['Beginner', 'Intermediate', 'Advanced', 'Expert']
+      const response = await fetch(`${API_BASE_URL}/courses/filter-options`, {
+        headers: getAuthHeaders()
       })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setFilterOptions({
+          track_types: data.track_types || [],
+          levels: data.levels || []
+        })
+      }
     } catch (err) {
       console.error('Failed to fetch filter options:', err)
+      // Fallback to default options
+      setFilterOptions({
+        track_types: ['Engineering', 'Data Science', 'Design', 'Product Management', 'Business Analytics'],
+        levels: ['beginner', 'intermediate', 'advanced']
+      })
     }
   }
 
@@ -48,46 +68,38 @@ const Courses = () => {
       setLoading(true)
       setError(null)
 
-      // TODO: Replace with actual API call
-      // const skip = (currentPage - 1) * limit
-      // const params = new URLSearchParams({ skip, limit })
-      // if (trackType) params.append('track_type', trackType)
-      // if (level) params.append('level', level)
-      // const response = await fetch(`/api/courses?${params}`)
-      // const data = await response.json()
+      const skip = (currentPage - 1) * limit
+      const params = new URLSearchParams({ skip: skip.toString(), limit: limit.toString() })
+      if (trackType) params.append('track_type', trackType)
+      if (level) params.append('level', level)
+      
+      const response = await fetch(`${API_BASE_URL}/courses?${params}`, {
+        headers: getAuthHeaders()
+      })
 
-      // Mock data
-      const mockCourses = [
-        { id: 1, title: 'Advanced Mathematics', description: 'Master calculus, linear algebra, and more.', track_type: 'Math', level: 'Advanced', duration_hours: 40, enrolled_count: 234, rating: 4.8 },
-        { id: 2, title: 'Physics Fundamentals', description: 'Learn the basics of classical mechanics and thermodynamics.', track_type: 'Science', level: 'Beginner', duration_hours: 30, enrolled_count: 456, rating: 4.6 },
-        { id: 3, title: 'English Literature', description: 'Explore classic and modern literature.', track_type: 'Language', level: 'Intermediate', duration_hours: 25, enrolled_count: 187, rating: 4.7 },
-        { id: 4, title: 'Web Development', description: 'Build modern web applications with React and Node.js.', track_type: 'Technology', level: 'Intermediate', duration_hours: 50, enrolled_count: 892, rating: 4.9 },
-        { id: 5, title: 'Data Science Basics', description: 'Introduction to data analysis and machine learning.', track_type: 'Technology', level: 'Beginner', duration_hours: 35, enrolled_count: 567, rating: 4.5 },
-        { id: 6, title: 'Creative Writing', description: 'Develop your storytelling and writing skills.', track_type: 'Arts', level: 'Beginner', duration_hours: 20, enrolled_count: 321, rating: 4.4 },
-      ]
+      if (!response.ok) {
+        throw new Error('Failed to fetch courses')
+      }
 
-      // Filter mock data
-      let filtered = mockCourses
-      if (trackType) {
-        filtered = filtered.filter(c => c.track_type === trackType)
-      }
-      if (level) {
-        filtered = filtered.filter(c => c.level === level)
-      }
+      const data = await response.json()
+      
+      // Filter by search query client-side if needed
+      let filteredCourses = data.items || []
       if (searchQuery) {
-        filtered = filtered.filter(c => 
+        filteredCourses = filteredCourses.filter(c => 
           c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.description.toLowerCase().includes(searchQuery.toLowerCase())
         )
       }
 
-      setCourses(filtered)
-      setTotalCourses(filtered.length)
-      setTotalPages(Math.ceil(filtered.length / limit))
+      setCourses(filteredCourses)
+      setTotalCourses(data.total || filteredCourses.length)
+      setTotalPages(data.pages || Math.ceil(filteredCourses.length / limit))
       setLoading(false)
     } catch (err) {
-      setError('Failed to load courses')
+      setError('Failed to load courses. Please try again.')
       setLoading(false)
+      console.error('Courses fetch error:', err)
     }
   }
 
@@ -124,8 +136,8 @@ const Courses = () => {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Explore Courses</h1>
-        <p className="text-gray-600">Discover courses to advance your learning journey</p>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('dashboard.exploreCourses')}</h1>
+        <p className="text-gray-600">{t('dashboard.exploreCoursesDesc')}</p>
       </div>
 
       {/* Search and Filters */}
@@ -136,7 +148,7 @@ const Courses = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Search courses..."
+              placeholder={t('common.search') + '...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && fetchCourses()}

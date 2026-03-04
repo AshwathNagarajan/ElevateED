@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { 
   BookOpen, 
   CheckCircle2, 
@@ -10,11 +11,22 @@ import {
   GraduationCap
 } from 'lucide-react'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 const MyCourses = () => {
+  const { t } = useTranslation()
   const [enrollments, setEnrollments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filter, setFilter] = useState('all') // all, in_progress, completed
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token')
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    }
+  }
 
   useEffect(() => {
     fetchEnrollments()
@@ -25,84 +37,40 @@ const MyCourses = () => {
       setLoading(true)
       setError(null)
 
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/enrollments/my-courses', {
-      //   headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      // })
-      // const data = await response.json()
+      const response = await fetch(`${API_BASE_URL}/enrollments/my-courses`, {
+        headers: getAuthHeaders()
+      })
 
-      // Mock data
-      const mockEnrollments = [
-        { 
-          id: 1, 
-          course_id: 1, 
-          course: { 
-            id: 1,
-            title: 'Advanced Mathematics', 
-            track_type: 'Math',
-            level: 'Advanced',
-            duration_hours: 40,
-            description: 'Master calculus, linear algebra, and differential equations.'
-          }, 
-          progress_percentage: 65, 
-          status: 'in_progress',
-          enrolled_at: '2024-02-15T10:00:00',
-          last_accessed: '2024-03-03T14:30:00'
-        },
-        { 
-          id: 2, 
-          course_id: 2, 
-          course: { 
-            id: 2,
-            title: 'Physics Fundamentals', 
-            track_type: 'Science',
-            level: 'Beginner',
-            duration_hours: 30,
-            description: 'Learn classical mechanics and thermodynamics.'
-          }, 
-          progress_percentage: 45, 
-          status: 'in_progress',
-          enrolled_at: '2024-02-20T09:00:00',
-          last_accessed: '2024-03-02T11:15:00'
-        },
-        { 
-          id: 3, 
-          course_id: 3, 
-          course: { 
-            id: 3,
-            title: 'English Literature', 
-            track_type: 'Language',
-            level: 'Intermediate',
-            duration_hours: 25,
-            description: 'Explore classic and modern literature.'
-          }, 
-          progress_percentage: 100, 
-          status: 'completed',
-          enrolled_at: '2024-01-10T08:00:00',
-          completed_at: '2024-02-28T16:45:00'
-        },
-        { 
-          id: 4, 
-          course_id: 4, 
-          course: { 
-            id: 4,
-            title: 'Introduction to Programming', 
-            track_type: 'Technology',
-            level: 'Beginner',
-            duration_hours: 35,
-            description: 'Learn programming fundamentals with Python.'
-          }, 
-          progress_percentage: 100, 
-          status: 'completed',
-          enrolled_at: '2024-01-05T10:00:00',
-          completed_at: '2024-02-10T14:20:00'
-        },
-      ]
+      if (!response.ok) {
+        throw new Error('Failed to fetch enrollments')
+      }
 
-      setEnrollments(mockEnrollments)
+      const data = await response.json()
+      
+      // Transform the data to match expected format
+      const transformedEnrollments = (data || []).map(enrollment => ({
+        id: enrollment.id,
+        course_id: enrollment.course_id,
+        course: enrollment.course || {
+          id: enrollment.course_id,
+          title: 'Unknown Course',
+          track_type: 'General',
+          level: 'beginner',
+          duration_hours: 0,
+          description: ''
+        },
+        progress_percentage: enrollment.progress_percentage || 0,
+        status: enrollment.completed ? 'completed' : 'in_progress',
+        enrolled_at: enrollment.enrolled_at,
+        completed_at: enrollment.completed ? enrollment.updated_at : null,
+        last_accessed: enrollment.updated_at
+      }))
+
+      setEnrollments(transformedEnrollments)
       setLoading(false)
     } catch (err) {
-      setError('Failed to load your courses')
+      console.error('Failed to load enrollments:', err)
+      setError('Failed to load your courses. Please try again.')
       setLoading(false)
     }
   }
@@ -139,8 +107,8 @@ const MyCourses = () => {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">My Courses</h1>
-        <p className="text-gray-600">Track your learning progress and continue where you left off</p>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('nav.myCourses')}</h1>
+        <p className="text-gray-600">{t('dashboard.myCoursesDesc')}</p>
       </div>
 
       {/* Stats Cards */}
@@ -151,7 +119,7 @@ const MyCourses = () => {
               <BookOpen className="text-blue-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Enrolled</p>
+              <p className="text-sm text-gray-500">{t('dashboard.enrolled')}</p>
               <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
           </div>
@@ -163,7 +131,7 @@ const MyCourses = () => {
               <Clock className="text-yellow-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">In Progress</p>
+              <p className="text-sm text-gray-500">{t('dashboard.inProgress')}</p>
               <p className="text-2xl font-bold text-gray-900">{stats.inProgress}</p>
             </div>
           </div>
@@ -175,7 +143,7 @@ const MyCourses = () => {
               <CheckCircle2 className="text-green-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Completed</p>
+              <p className="text-sm text-gray-500">{t('dashboard.completed')}</p>
               <p className="text-2xl font-bold text-gray-900">{stats.completed}</p>
             </div>
           </div>
@@ -187,9 +155,9 @@ const MyCourses = () => {
         <Filter size={20} className="text-gray-400" />
         <div className="flex gap-2">
           {[
-            { key: 'all', label: 'All Courses' },
-            { key: 'in_progress', label: 'In Progress' },
-            { key: 'completed', label: 'Completed' }
+            { key: 'all', label: t('courses.allCourses') },
+            { key: 'in_progress', label: t('dashboard.inProgress') },
+            { key: 'completed', label: t('dashboard.completed') }
           ].map(tab => (
             <button
               key={tab.key}

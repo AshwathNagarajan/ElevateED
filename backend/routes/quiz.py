@@ -7,7 +7,7 @@ from schemas.quiz import (
     QuizSubmissionRequest,
     QuizSubmissionResponse,
 )
-from routes.auth import get_current_user
+from routes.auth import get_current_user, get_student_for_user
 from services.badge_service import check_and_award_badges
 from typing import List
 
@@ -76,12 +76,7 @@ def submit_quiz(
         )
     
     # Get student from current user
-    student = db.query(Student).filter(Student.id == current_user.id).first()
-    if not student:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Student not found for current user"
-        )
+    student = get_student_for_user(db, current_user)
     
     # Calculate score: 100 if correct, 0 if incorrect
     is_correct = submission_data.selected_answer.value == quiz.correct_answer.value
@@ -178,12 +173,7 @@ def get_my_quiz_submissions(
         List of student's quiz submissions
     """
     # Get student from current user
-    student = db.query(Student).filter(Student.id == current_user.id).first()
-    if not student:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Student not found for current user"
-        )
+    student = get_student_for_user(db, current_user)
     
     # Get all submissions for this student
     submissions = db.query(QuizSubmission).filter(

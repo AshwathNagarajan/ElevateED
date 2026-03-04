@@ -16,6 +16,8 @@ import {
 import LessonListItem from '../components/LessonListItem'
 import LessonContent from '../components/LessonContent'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 const CourseView = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -28,6 +30,14 @@ const CourseView = () => {
   const [markingComplete, setMarkingComplete] = useState(null)
   const [isEnrolled, setIsEnrolled] = useState(false)
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token')
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    }
+  }
+
   useEffect(() => {
     fetchCourseData()
   }, [id])
@@ -37,76 +47,71 @@ const CourseView = () => {
       setLoading(true)
       setError(null)
 
-      // TODO: Replace with actual API call
-       const response = await fetch(`/api/courses/${id}`, {
-       headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
+        headers: getAuthHeaders()
       })
-      const data = await response.json()
-
-      // Mock course data
-      const mockCourse = {
-        id: parseInt(id),
-        title: 'Advanced Mathematics',
-        description: 'Master advanced mathematical concepts including calculus, linear algebra, and differential equations. This comprehensive course covers everything from limits to multivariable calculus.',
-        track_type: 'Math',
-        level: 'Advanced',
-        duration_hours: 40,
-        enrolled_count: 234,
-        rating: 4.8,
-        instructor: 'Dr. Sarah Johnson',
-        progress_percentage: 45,
-        modules: [
-          {
-            id: 1,
-            title: 'Calculus Fundamentals',
-            order_number: 1,
-            lessons: [
-              { id: 1, title: 'Introduction to Limits', content: 'Learn about the concept of limits and their importance in calculus.', video_url: null, duration_minutes: 12, completed: true, has_quiz: true, quiz_id: 1 },
-              { id: 2, title: 'Derivatives Explained', content: 'Understanding derivatives and their applications.', video_url: null, duration_minutes: 18, completed: true, has_quiz: true, quiz_id: 2 },
-              { id: 3, title: 'Power Rule and Chain Rule', content: 'Master the power rule and chain rule for derivatives.', video_url: null, duration_minutes: 15, completed: false, has_quiz: true, quiz_id: 3 }
-            ]
-          },
-          {
-            id: 2,
-            title: 'Integration and Applications',
-            order_number: 2,
-            lessons: [
-              { id: 4, title: 'Introduction to Integration', content: 'Learn the basics of integration and antiderivatives.', video_url: null, duration_minutes: 20, completed: false, has_quiz: true, quiz_id: 4 },
-              { id: 5, title: 'Integration Techniques', content: 'Advanced integration techniques including substitution and parts.', video_url: null, duration_minutes: 22, completed: false, has_quiz: true, quiz_id: 5 }
-            ]
-          },
-          {
-            id: 3,
-            title: 'Applications of Calculus',
-            order_number: 3,
-            lessons: [
-              { id: 6, title: 'Area Under Curves', content: 'Calculate areas using definite integrals.', video_url: null, duration_minutes: 16, completed: false, has_quiz: true, quiz_id: 6 },
-              { id: 7, title: 'Volume of Solids', content: 'Learn to calculate volumes of revolution.', video_url: null, duration_minutes: 25, completed: false, has_quiz: false, quiz_id: null }
-            ]
-          }
-        ]
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch course')
       }
 
-      setCourse(mockCourse)
-      setIsEnrolled(true) // Mock enrolled status
-      
-      // Set completed lessons from course data
-      const completed = new Set()
-      mockCourse.modules.forEach(module => {
-        module.lessons.forEach(lesson => {
-          if (lesson.completed) completed.add(lesson.id)
+      const data = await response.json()
+
+      // Transform to expected format
+      const transformedCourse = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        track_type: data.track_type,
+        level: data.level,
+        duration_hours: data.modules?.reduce((sum, m) => 
+          sum + (m.lessons?.reduce((s, l) => s + (l.duration_minutes || 0), 0) || 0), 0) / 60 || 0,
+        enrolled_count: data.enrolled_count || 0,
+        rating: data.rating || 4.5,
+        instructor: data.instructor || 'ElevateED Instructor',
+        progress_percentage: 0,
+        modules: data.modules?.map(m => ({
+          id: m.id,
+          title: m.title,
+          order_number: m.order_number,
+          lessons: m.lessons?.map(l => ({
+            id: l.id,
+            title: l.title,
+            content: l.content,
+            video_url: l.video_url,
+            duration_minutes: l.duration_minutes,
+            completed: false,
+            has_quiz: l.quizzes?.length > 0,
+            quiz_id: l.quizzes?.[0]?.id || null
+          })) || []
+        })) || []
+      }
+
+      setCourse(transformedCourse)
+
+      // Check enrollment status
+      try {
+        const enrollResponse = await fetch(`${API_BASE_URL}/enrollments/my-courses`, {
+          headers: getAuthHeaders()
         })
-      })
-      setCompletedLessons(completed)
+        if (enrollResponse.ok) {
+          const enrollments = await enrollResponse.json()
+          const enrolled = enrollments.some(e => e.course_id === parseInt(id))
+          setIsEnrolled(enrolled)
+        }
+      } catch (e) {
+        console.error('Failed to check enrollment:', e)
+      }
 
       // Auto-expand first module
-      if (mockCourse.modules.length > 0) {
-        setExpandedModuleId(mockCourse.modules[0].id)
+      if (transformedCourse.modules.length > 0) {
+        setExpandedModuleId(transformedCourse.modules[0].id)
       }
 
       setLoading(false)
     } catch (err) {
-      setError('Failed to load course')
+      console.error('Course fetch error:', err)
+      setError('Failed to load course. Please try again.')
       setLoading(false)
     }
   }
@@ -115,13 +120,14 @@ const CourseView = () => {
     try {
       setMarkingComplete(lessonId)
 
-      // TODO: Replace with actual API call
-      // await fetch(`/api/lessons/${lessonId}/complete`, {
-      //   method: 'POST',
-      //   headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      // })
+      const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}/complete`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      })
 
-      await new Promise(resolve => setTimeout(resolve, 500))
+      if (!response.ok) {
+        console.warn('Failed to mark lesson complete on server')
+      }
 
       const newCompleted = new Set(completedLessons)
       newCompleted.add(lessonId)
@@ -141,6 +147,7 @@ const CourseView = () => {
 
       setMarkingComplete(null)
     } catch (err) {
+      console.error('Mark complete error:', err)
       setError('Failed to mark lesson as complete')
       setMarkingComplete(null)
     }
@@ -148,18 +155,19 @@ const CourseView = () => {
 
   const handleEnroll = async () => {
     try {
-      // TODO: Replace with actual API call
-      // await fetch('/api/enrollments/', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({ course_id: id })
-      // })
+      const response = await fetch(`${API_BASE_URL}/enrollments/`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ course_id: parseInt(id) })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to enroll')
+      }
 
       setIsEnrolled(true)
     } catch (err) {
+      console.error('Enroll error:', err)
       setError('Failed to enroll in course')
     }
   }

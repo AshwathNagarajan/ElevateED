@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { 
   Lightbulb, 
   BookOpen, 
@@ -12,11 +13,22 @@ import {
   Target
 } from 'lucide-react'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 const Recommendations = () => {
+  const { t } = useTranslation()
   const [recommendations, setRecommendations] = useState([])
   const [courseRecommendations, setCourseRecommendations] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token')
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    }
+  }
 
   useEffect(() => {
     fetchRecommendations()
@@ -27,96 +39,64 @@ const Recommendations = () => {
       setLoading(true)
       setError(null)
 
-      // TODO: Replace with actual API calls
-      // const [skillResponse, courseResponse] = await Promise.all([
-      //   fetch('/api/recommendations/my-recommendations', { headers: { 'Authorization': `Bearer ${token}` } }),
-      //   fetch('/api/recommendations/', { headers: { 'Authorization': `Bearer ${token}` } })
-      // ])
+      // Fetch skill-based recommendations
+      let skillRecommendations = []
+      try {
+        const skillResponse = await fetch(`${API_BASE_URL}/recommendations/my-recommendations`, {
+          headers: getAuthHeaders()
+        })
+        if (skillResponse.ok) {
+          skillRecommendations = await skillResponse.json()
+        }
+      } catch (e) {
+        console.warn('Skill recommendations endpoint not available')
+      }
 
-      // Mock skill-based recommendations
-      const mockSkillRecommendations = [
-        { 
-          id: 1,
-          type: 'revision', 
-          module_name: 'Calculus Fundamentals', 
-          message: 'Consider reviewing Calculus Fundamentals. Your recent quiz scores indicate this area needs attention.',
-          score: 45,
-          reason: 'Multiple quiz failures detected',
-          priority: 'high'
-        },
-        { 
-          id: 2,
-          type: 'next_level', 
-          module_name: 'Algebra Advanced', 
-          message: 'Excellent work in Algebra! You\'ve mastered the fundamentals and are ready for advanced topics.',
-          score: 92,
-          reason: 'High performance detected',
-          priority: 'medium'
-        },
-        { 
-          id: 3,
-          type: 'foundational_review', 
-          module_name: 'Geometry Basics', 
-          message: 'Strengthening your geometry foundations will help with more advanced courses.',
-          score: 38,
-          reason: 'Low performance in related topics',
-          priority: 'high'
-        },
-        { 
-          id: 4,
-          type: 'practice', 
-          module_name: 'Trigonometry', 
-          message: 'Regular practice in Trigonometry will help solidify your understanding.',
-          score: 65,
-          reason: 'Moderate performance - practice recommended',
-          priority: 'low'
-        },
-      ]
+      // Fetch course recommendations (not enrolled courses for the user)
+      let courseRecs = []
+      try {
+        // Fetch user's enrollments to exclude already enrolled courses
+        const enrollmentsResponse = await fetch(`${API_BASE_URL}/enrollments/my-enrollments`, {
+          headers: getAuthHeaders()
+        })
+        const enrolledCourseIds = new Set()
+        if (enrollmentsResponse.ok) {
+          const enrollments = await enrollmentsResponse.json()
+          enrollments.forEach(e => enrolledCourseIds.add(e.course_id))
+        }
 
-      // Mock course recommendations
-      const mockCourseRecommendations = [
-        {
-          id: 1,
-          course_id: 5,
-          title: 'Data Science Fundamentals',
-          description: 'Learn the basics of data analysis and machine learning with Python.',
-          track_type: 'Technology',
-          level: 'Beginner',
-          duration_hours: 35,
-          rating: 4.7,
-          recommendation_score: 95,
-          reason: 'Matches your Math track and skill level'
-        },
-        {
-          id: 2,
-          course_id: 6,
-          title: 'Statistics for Data Analysis',
-          description: 'Master statistical methods essential for data science.',
-          track_type: 'Math',
-          level: 'Intermediate',
-          duration_hours: 28,
-          rating: 4.5,
-          recommendation_score: 88,
-          reason: 'Builds on your calculus knowledge'
-        },
-        {
-          id: 3,
-          course_id: 7,
-          title: 'Linear Algebra Applications',
-          description: 'Applied linear algebra for machine learning and graphics.',
-          track_type: 'Math',
-          level: 'Advanced',
-          duration_hours: 42,
-          rating: 4.8,
-          recommendation_score: 82,
-          reason: 'Similar students found this helpful'
-        },
-      ]
+        const courseResponse = await fetch(`${API_BASE_URL}/courses?limit=10`, {
+          headers: getAuthHeaders()
+        })
+        if (courseResponse.ok) {
+          const data = await courseResponse.json()
+          // Filter out already enrolled courses and limit to 6
+          courseRecs = (data.items || [])
+            .filter(course => !enrolledCourseIds.has(course.id))
+            .slice(0, 6)
+            .map((course) => ({
+              id: course.id,
+              course_id: course.id,
+              title: course.title,
+              description: course.description,
+              track_type: course.track_type,
+              level: course.level,
+              duration_hours: course.duration_hours || 0,
+              rating: course.rating || null,
+              reason: 'Explore new topics'
+            }))
+        }
+      } catch (e) {
+        console.warn('Course recommendations fetch failed')
+      }
 
-      setRecommendations(mockSkillRecommendations)
-      setCourseRecommendations(mockCourseRecommendations)
+      // No fake defaults - let the UI show empty state for new users
+
+      setRecommendations(skillRecommendations)
+      setCourseRecommendations(courseRecs)
       setLoading(false)
     } catch (err) {
+      console.error('Recommendations fetch error:', err)
       setError('Failed to load recommendations')
       setLoading(false)
     }
@@ -134,11 +114,11 @@ const Recommendations = () => {
 
   const getTypeLabel = (type) => {
     switch (type) {
-      case 'revision': return 'Needs Review'
-      case 'next_level': return 'Ready to Advance'
-      case 'foundational_review': return 'Strengthen Foundations'
-      case 'practice': return 'Practice More'
-      default: return 'Recommendation'
+      case 'revision': return t('recommendations.reviewNeeded')
+      case 'next_level': return t('recommendations.readyToAdvance')
+      case 'foundational_review': return t('recommendations.strengthenBasics')
+      case 'practice': return t('recommendations.recommendation')
+      default: return t('recommendations.recommendation')
     }
   }
 
@@ -166,15 +146,15 @@ const Recommendations = () => {
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Recommendations</h1>
-          <p className="text-gray-600">Personalized suggestions to optimize your learning journey</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('recommendations.title')}</h1>
+          <p className="text-gray-600">{t('recommendations.basedOnProgress')}</p>
         </div>
         <button
           onClick={fetchRecommendations}
           className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
         >
           <RefreshCw size={18} />
-          Refresh
+          {t('common.retry')}
         </button>
       </div>
 
@@ -264,7 +244,7 @@ const Recommendations = () => {
             <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-4">
               <div className="flex items-center gap-2 mb-6">
                 <Star className="text-yellow-500" size={24} />
-                <h2 className="text-xl font-bold text-gray-900">Suggested Courses</h2>
+                <h2 className="text-xl font-bold text-gray-900">Courses to Explore</h2>
               </div>
 
               {courseRecommendations.length > 0 ? (
@@ -290,17 +270,19 @@ const Recommendations = () => {
                       <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
                         <div className="flex items-center gap-1">
                           <Clock size={12} />
-                          <span>{course.duration_hours}h</span>
+                          <span>{course.duration_hours || 0}h</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Star size={12} className="text-yellow-500" />
-                          <span>{course.rating}</span>
-                        </div>
+                        {course.rating && (
+                          <div className="flex items-center gap-1">
+                            <Star size={12} className="text-yellow-500" />
+                            <span>{course.rating}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-green-600 font-medium">
-                          {course.recommendation_score}% match
+                        <span className="text-xs text-primary-600 font-medium">
+                          View Course
                         </span>
                         <ArrowRight size={14} className="text-primary-600" />
                       </div>

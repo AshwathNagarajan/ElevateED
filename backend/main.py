@@ -177,18 +177,18 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 # ==================== Routes ====================
 
-# Include routers
-app.include_router(auth_router)
-app.include_router(student_router)
-app.include_router(predict_router)
-app.include_router(skill_router)
-app.include_router(attendance_router)
-app.include_router(course_router)
-app.include_router(enrollment_router)
-app.include_router(lesson_router)
-app.include_router(quiz_router)
-app.include_router(recommendation_router)
-app.include_router(analytics_router)
+# Include routers with /api prefix
+app.include_router(auth_router, prefix="/api")
+app.include_router(student_router, prefix="/api")
+app.include_router(predict_router, prefix="/api")
+app.include_router(skill_router, prefix="/api")
+app.include_router(attendance_router, prefix="/api")
+app.include_router(course_router, prefix="/api")
+app.include_router(enrollment_router, prefix="/api")
+app.include_router(lesson_router, prefix="/api")
+app.include_router(quiz_router, prefix="/api")
+app.include_router(recommendation_router, prefix="/api")
+app.include_router(analytics_router, prefix="/api")
 
 @app.get("/")
 def read_root():

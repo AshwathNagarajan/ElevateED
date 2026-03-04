@@ -10,6 +10,7 @@ from schemas.course import (
     CourseResponse,
     CourseDetailResponse,
     CourseUpdate,
+    CoursePaginatedResponse,
     ModuleCreate,
     ModuleResponse,
     LessonCreate,
@@ -48,7 +49,7 @@ def create_course(
     return db_course
 
 
-@router.get("/", response_model=dict)
+@router.get("/", response_model=CoursePaginatedResponse)
 def get_courses(
     skip: int = 0,
     limit: int = 20,

@@ -5,6 +5,7 @@ from models import Enrollment, Course, Lesson, Module
 from models.user import User
 from schemas.enrollment import (
     EnrollmentCreate,
+    EnrollmentCreateRequest,
     EnrollmentResponse,
     EnrollmentDetailResponse,
     StudentEnrollmentsResponse,
@@ -19,6 +20,55 @@ router = APIRouter(
 
 
 # ==================== ENROLLMENT ENDPOINTS ====================
+
+@router.post("/", response_model=EnrollmentResponse, status_code=status.HTTP_201_CREATED)
+def create_enrollment(
+    enrollment_request: EnrollmentCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Enroll the authenticated user in a course.
+    
+    Accepts JSON body with course_id.
+    """
+    course_id = enrollment_request.course_id
+    
+    # Verify course exists
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Course with id {course_id} not found"
+        )
+    
+    # Check if already enrolled
+    existing = db.query(Enrollment).filter(
+        and_(
+            Enrollment.student_id == current_user.id,
+            Enrollment.course_id == course_id
+        )
+    ).first()
+    
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are already enrolled in this course"
+        )
+    
+    # Create enrollment
+    enrollment = Enrollment(
+        student_id=current_user.id,
+        course_id=course_id,
+        progress_percentage=0.0,
+        completed=False,
+    )
+    db.add(enrollment)
+    db.commit()
+    db.refresh(enrollment)
+    
+    return enrollment
+
 
 @router.post("/enroll/{course_id}", response_model=EnrollmentResponse, status_code=status.HTTP_201_CREATED)
 def enroll_in_course(

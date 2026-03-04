@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -10,10 +10,13 @@ class Student(Base):
     # Primary Key
     id = Column(Integer, primary_key=True, index=True)
     
+    # Link to User (authentication)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=True, index=True)
+    
     # Personal Information
     name = Column(String(255), nullable=False, index=True)
-    age = Column(Integer, nullable=False)
-    guardian_contact = Column(String(255), nullable=False)
+    age = Column(Integer, nullable=True, default=0)
+    guardian_contact = Column(String(255), nullable=True, default="")
     
     # Track Information
     interest_track = Column(String(100), nullable=True)
@@ -23,6 +26,11 @@ class Student(Base):
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     
     # Relationships
+    user = relationship(
+        "User",
+        foreign_keys=[user_id],
+        lazy="joined"
+    )
     quiz_submissions = relationship(
         "QuizSubmission",
         back_populates="student",
@@ -37,4 +45,4 @@ class Student(Base):
     )
     
     def __repr__(self):
-        return f"<Student(id={self.id}, name={self.name}, age={self.age})>"
+        return f"<Student(id={self.id}, name={self.name}, user_id={self.user_id})>"

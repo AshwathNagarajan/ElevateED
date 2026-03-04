@@ -12,7 +12,7 @@ class Enrollment(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # Foreign Keys
-    student_id = Column(Integer, ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
     
     # Enrollment Information
@@ -24,7 +24,7 @@ class Enrollment(Base):
     
     # Relationships
     student = relationship(
-        "Student",
+        "User",
         foreign_keys=[student_id],
         lazy="joined"
     )

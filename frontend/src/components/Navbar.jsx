@@ -1,24 +1,27 @@
 import React, { useState } from 'react'
 import { NavLink as Link } from 'react-router-dom'
 import { Menu, X, LogOut, Home, BookOpen, GraduationCap, Lightbulb } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from './LanguageSwitcher'
 
 const Navbar = ({ userRole, onLogout }) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
 
   const toggleMenu = () => setIsOpen(!isOpen)
 
   // Student navigation links
   const studentLinks = [
-    { to: '/', label: 'Dashboard', icon: Home },
-    { to: '/courses', label: 'Courses', icon: BookOpen },
-    { to: '/my-courses', label: 'My Courses', icon: GraduationCap },
-    { to: '/recommendations', label: 'Recommendations', icon: Lightbulb },
+    { to: '/', label: t('nav.dashboard'), icon: Home },
+    { to: '/courses', label: t('nav.courses'), icon: BookOpen },
+    { to: '/my-courses', label: t('nav.myCourses'), icon: GraduationCap },
+    { to: '/recommendations', label: t('nav.recommendations'), icon: Lightbulb },
   ]
 
   // Admin navigation links
   const adminLinks = [
-    { to: '/', label: 'Dashboard', icon: Home },
-    { to: '/courses', label: 'Manage Courses', icon: BookOpen },
+    { to: '/', label: t('nav.dashboard'), icon: Home },
+    { to: '/courses', label: t('nav.manageCourses'), icon: BookOpen },
   ]
 
   const navLinks = userRole === 'admin' ? adminLinks : studentLinks
@@ -58,15 +61,16 @@ const Navbar = ({ userRole, onLogout }) => {
 
           {/* Desktop User Menu */}
           <div className="hidden md:flex items-center gap-4">
+            <LanguageSwitcher />
             <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              {userRole === 'admin' ? 'Admin' : 'Student'}
+              {userRole === 'admin' ? t('nav.admin') : t('nav.student')}
             </span>
             <button
               onClick={onLogout}
               className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
               <LogOut size={18} />
-              <span className="text-sm font-medium">Logout</span>
+              <span className="text-sm font-medium">{t('nav.logout')}</span>
             </button>
           </div>
 
@@ -100,8 +104,11 @@ const Navbar = ({ userRole, onLogout }) => {
               ))}
             </div>
             <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="mb-3 px-3">
+                <LanguageSwitcher />
+              </div>
               <div className="text-xs font-medium text-gray-500 mb-3 px-3">
-                Logged in as {userRole === 'admin' ? 'Admin' : 'Student'}
+                {userRole === 'admin' ? t('nav.admin') : t('nav.student')}
               </div>
               <button
                 onClick={() => {
@@ -111,7 +118,7 @@ const Navbar = ({ userRole, onLogout }) => {
                 className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <LogOut size={18} />
-                Logout
+                {t('nav.logout')}
               </button>
             </div>
           </div>

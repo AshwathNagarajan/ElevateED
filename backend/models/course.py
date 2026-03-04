@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -16,6 +16,12 @@ class Course(Base):
     description = Column(Text, nullable=True)
     track_type = Column(String(100), nullable=False, index=True)
     level = Column(String(50), nullable=False)  # e.g., "Beginner", "Intermediate", "Advanced"
+    
+    # Additional fields
+    duration_hours = Column(Float, nullable=True, default=0.0)
+    instructor = Column(String(255), nullable=True, default="ElevateED Instructor")
+    rating = Column(Float, nullable=True, default=0.0)  # Average rating 0-5
+    thumbnail_url = Column(String(512), nullable=True)
     
     # Timestamps
     created_at = Column(DateTime, server_default=func.now(), nullable=False)

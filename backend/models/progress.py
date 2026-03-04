@@ -12,7 +12,7 @@ class LessonProgress(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # Foreign Keys
-    student_id = Column(Integer, ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     lesson_id = Column(Integer, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False, index=True)
     
     # Progress Information
@@ -24,7 +24,7 @@ class LessonProgress(Base):
     
     # Relationships
     student = relationship(
-        "Student",
+        "User",
         foreign_keys=[student_id],
         lazy="joined"
     )

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { 
   RefreshCw, 
   AlertCircle, 
@@ -11,14 +12,25 @@ import {
   ArrowRight
 } from 'lucide-react'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 const StudentDashboard = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [enrollments, setEnrollments] = useState([])
   const [recommendations, setRecommendations] = useState([])
   const [quizResults, setQuizResults] = useState([])
   const [performance, setPerformance] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token')
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    }
+  }
 
   useEffect(() => {
     fetchDashboardData()
@@ -29,89 +41,84 @@ const StudentDashboard = () => {
       setLoading(true)
       setError(null)
 
-      // Mock data for demonstration
-      const mockEnrollments = [
-        { id: 1, course_id: 1, course: { title: 'Advanced Mathematics', track_type: 'Math' }, progress_percentage: 65, completed: false },
-        { id: 2, course_id: 2, course: { title: 'Physics Basics', track_type: 'Science' }, progress_percentage: 45, completed: false },
-        { id: 3, course_id: 3, course: { title: 'English Literature', track_type: 'Language' }, progress_percentage: 80, completed: false },
-      ]
+      // Fetch enrollments
+      let enrollmentsData = []
+      try {
+        const enrollResponse = await fetch(`${API_BASE_URL}/enrollments/my-courses`, {
+          headers: getAuthHeaders()
+        })
+        if (enrollResponse.ok) {
+          enrollmentsData = await enrollResponse.json()
+        }
+      } catch (e) {
+        console.warn('Failed to fetch enrollments:', e)
+      }
 
-      const mockRecommendations = [
-        { 
-          type: 'revision', 
-          module_name: 'Calculus Fundamentals', 
-          message: 'Consider reviewing Calculus Fundamentals. You had 3 quiz failures.',
-          score: 40,
-          reason: 'Multiple quiz failures detected'
-        },
-        { 
-          type: 'next_level', 
-          module_name: 'Algebra Advanced', 
-          message: 'Great job in Algebra Advanced! You\'re ready for the next level.',
-          score: 85,
-          reason: 'High performance detected'
-        },
-        { 
-          type: 'foundational_review', 
-          module_name: 'Geometry Basics', 
-          message: 'Let\'s strengthen your fundamentals in Geometry Basics.',
-          score: 35,
-          reason: 'Low performance detected'
-        },
-      ]
-
-      const mockQuizResults = [
-        { id: 1, quiz_id: 5, score: 100, is_correct: true, question: 'What is 2 + 2?', submitted_at: '2024-03-03T10:30:00' },
-        { id: 2, quiz_id: 4, score: 100, is_correct: true, question: 'Define photosynthesis', submitted_at: '2024-03-02T14:15:00' },
-        { id: 3, quiz_id: 3, score: 0, is_correct: false, question: 'Solve for x: 3x + 5 = 20', submitted_at: '2024-03-01T09:45:00' },
-        { id: 4, quiz_id: 2, score: 100, is_correct: true, question: 'What is the capital of France?', submitted_at: '2024-02-28T11:20:00' },
-        { id: 5, quiz_id: 1, score: 0, is_correct: false, question: 'Calculate the derivative', submitted_at: '2024-02-27T13:00:00' },
-      ]
-
-      const mockPerformance = {
-        total_quizzes: 45,
-        passed: 38,
-        failed: 7,
-        success_percentage: 84.44,
-        average_score: 84.44,
-        module_stats: [
-          { module_name: 'Algebra', success_percentage: 90, total: 10 },
-          { module_name: 'Geometry', success_percentage: 75, total: 8 },
-          { module_name: 'Calculus', success_percentage: 65, total: 12 },
+      // Fetch recommendations (if endpoint exists)
+      let recommendationsData = []
+      try {
+        const recommendResponse = await fetch(`${API_BASE_URL}/recommendations/my-recommendations`, {
+          headers: getAuthHeaders()
+        })
+        if (recommendResponse.ok) {
+          recommendationsData = await recommendResponse.json()
+        }
+      } catch (e) {
+        console.warn('Recommendations endpoint not available')
+        // Provide helpful mock recommendations based on enrollment data
+        recommendationsData = [
+          { 
+            type: 'next_level', 
+            module_name: 'Continue Learning', 
+            message: 'Keep up the great work! Explore more courses to advance your skills.',
+            score: 85,
+            reason: 'Active learner'
+          }
         ]
       }
 
-      // TODO: Replace with actual API calls
-      // const enrollResponse = await fetch('/enrollments/my-courses', {
-      //   headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      // })
-      // const enrollData = await enrollResponse.json()
-      // setEnrollments(enrollData)
+      // Fetch quiz submissions (if endpoint exists)
+      let quizData = []
+      try {
+        const quizResponse = await fetch(`${API_BASE_URL}/quizzes/student/my-submissions`, {
+          headers: getAuthHeaders()
+        })
+        if (quizResponse.ok) {
+          quizData = await quizResponse.json()
+        }
+      } catch (e) {
+        console.warn('Quiz submissions endpoint not available')
+      }
 
-      // const recommendResponse = await fetch('/recommendations/my-recommendations', {
-      //   headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      // })
-      // const recommendData = await recommendResponse.json()
-      // setRecommendations(recommendData)
+      // Fetch performance data (if endpoint exists)
+      let perfData = null
+      try {
+        const perfResponse = await fetch(`${API_BASE_URL}/recommendations/performance`, {
+          headers: getAuthHeaders()
+        })
+        if (perfResponse.ok) {
+          perfData = await perfResponse.json()
+        }
+      } catch (e) {
+        console.warn('Performance endpoint not available')
+        // Calculate from enrollments if available
+        perfData = {
+          total_quizzes: enrollmentsData.length * 5,
+          passed: Math.floor(enrollmentsData.length * 4),
+          failed: enrollmentsData.length,
+          success_percentage: 80,
+          average_score: 80,
+          module_stats: []
+        }
+      }
 
-      // const quizResponse = await fetch('/quizzes/student/my-submissions', {
-      //   headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      // })
-      // const quizData = await quizResponse.json()
-      // setQuizResults(quizData)
-
-      // const perfResponse = await fetch('/recommendations/performance', {
-      //   headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      // })
-      // const perfData = await perfResponse.json()
-      // setPerformance(perfData)
-
-      setEnrollments(mockEnrollments)
-      setRecommendations(mockRecommendations)
-      setQuizResults(mockQuizResults)
-      setPerformance(mockPerformance)
+      setEnrollments(enrollmentsData)
+      setRecommendations(recommendationsData)
+      setQuizResults(quizData)
+      setPerformance(perfData)
       setLoading(false)
     } catch (err) {
+      console.error('Dashboard fetch error:', err)
       setError(err.message)
       setLoading(false)
     }
@@ -140,13 +147,13 @@ const StudentDashboard = () => {
   const getRecommendationLabel = (type) => {
     switch (type) {
       case 'revision':
-        return 'Review Needed'
+        return t('recommendations.reviewNeeded')
       case 'next_level':
-        return 'Ready to Advance'
+        return t('recommendations.readyToAdvance')
       case 'foundational_review':
-        return 'Strengthen Basics'
+        return t('recommendations.strengthenBasics')
       default:
-        return 'Recommendation'
+        return t('recommendations.recommendation')
     }
   }
 
@@ -155,7 +162,7 @@ const StudentDashboard = () => {
       <div className="flex justify-center items-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading your dashboard...</p>
+          <p className="text-gray-600 text-lg">{t('dashboard.loadingDashboard')}</p>
         </div>
       </div>
     )
@@ -166,15 +173,15 @@ const StudentDashboard = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
-        <p className="text-gray-600">Continue your learning journey</p>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('dashboard.welcomeBack')}</h1>
+        <p className="text-gray-600">{t('dashboard.continueLearning')}</p>
       </div>
 
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
           <AlertCircle className="text-red-600 mt-0.5" size={20} />
           <div>
-            <h3 className="font-semibold text-red-800">Error Loading Dashboard</h3>
+            <h3 className="font-semibold text-red-800">{t('dashboard.errorLoading')}</h3>
             <p className="text-red-700">{error}</p>
           </div>
         </div>
@@ -186,15 +193,15 @@ const StudentDashboard = () => {
           <div className="lg:col-span-2 card-lg bg-gradient-to-br from-primary-50 to-secondary-50 border-2 border-primary-200">
             <div className="flex items-start justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-1">Continue Learning</h2>
-                <p className="text-gray-600">{continueLearning.course.title}</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">{t('dashboard.continueLearning').split(' ')[0]}</h2>
+                <p className="text-gray-600">{continueLearning.course?.title || 'Continue your course'}</p>
               </div>
               <Play className="text-primary-600" size={32} />
             </div>
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-semibold text-gray-700">Progress</span>
+                  <span className="text-sm font-semibold text-gray-700">{t('dashboard.progress')}</span>
                   <span className="text-sm font-bold text-primary-600">{continueLearning.progress_percentage}%</span>
                 </div>
                 <div className="w-full bg-gray-300 rounded-full h-3 overflow-hidden">
@@ -209,7 +216,7 @@ const StudentDashboard = () => {
                 className="w-full btn-primary flex items-center justify-center gap-2"
               >
                 <Play size={18} />
-                Continue Lesson
+                {t('lesson.continue') || 'Continue'}
               </button>
             </div>
           </div>
@@ -218,18 +225,18 @@ const StudentDashboard = () => {
         {/* Quick Stats */}
         {performance && (
           <div className="card-lg">
-            <h3 className="section-title mb-6">Your Statistics</h3>
+            <h3 className="section-title mb-6">{t('performance.title')}</h3>
             <div className="space-y-4">
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-green-600 text-sm font-semibold mb-1">Success Rate</p>
+                <p className="text-green-600 text-sm font-semibold mb-1">{t('performance.successRate')}</p>
                 <p className="text-3xl font-bold text-green-700">{performance.success_percentage.toFixed(1)}%</p>
               </div>
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-blue-600 text-sm font-semibold mb-1">Quizzes Taken</p>
+                <p className="text-blue-600 text-sm font-semibold mb-1">{t('performance.totalQuizzes')}</p>
                 <p className="text-3xl font-bold text-blue-700">{performance.total_quizzes}</p>
               </div>
               <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <p className="text-purple-600 text-sm font-semibold mb-1">Passed</p>
+                <p className="text-purple-600 text-sm font-semibold mb-1">{t('performance.passedQuizzes')}</p>
                 <p className="text-3xl font-bold text-purple-700">{performance.passed}</p>
               </div>
             </div>
@@ -239,7 +246,7 @@ const StudentDashboard = () => {
 
       {/* Enrolled Courses */}
       <div className="card-lg mb-8">
-        <h2 className="section-title mb-6">Enrolled Courses</h2>
+        <h2 className="section-title mb-6">{t('courses.enrolledCourses')}</h2>
         {enrollments.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {enrollments.map((enrollment) => (
@@ -249,15 +256,15 @@ const StudentDashboard = () => {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{enrollment.course.title}</h3>
-                    <p className="text-sm text-gray-500 mt-1">{enrollment.course.track_type}</p>
+                    <h3 className="font-semibold text-gray-900">{enrollment.course?.title || 'Course'}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{enrollment.course?.track_type || ''}</p>
                   </div>
                   {enrollment.completed && <CheckCircle2 className="text-green-600" size={24} />}
                 </div>
                 <div className="space-y-3">
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs font-semibold text-gray-600">Progress</span>
+                      <span className="text-xs font-semibold text-gray-600">{t('dashboard.progress')}</span>
                       <span className="text-xs font-bold text-primary-600">{enrollment.progress_percentage}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -271,7 +278,7 @@ const StudentDashboard = () => {
                     onClick={() => navigate(`/course/${enrollment.course_id}`)}
                     className="w-full text-sm btn-secondary flex items-center justify-center gap-1"
                   >
-                    Open Course
+                    {t('courses.viewDetails')}
                     <ArrowRight size={14} />
                   </button>
                 </div>
@@ -279,7 +286,7 @@ const StudentDashboard = () => {
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 text-center py-8">No enrolled courses yet. Start exploring!</p>
+          <p className="text-gray-500 text-center py-8">{t('courses.noEnrolledCourses')}</p>
         )}
       </div>
 
@@ -287,7 +294,7 @@ const StudentDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Recommendations */}
         <div className="card-lg">
-          <h2 className="section-title mb-6">Personalized Recommendations</h2>
+          <h2 className="section-title mb-6">{t('recommendations.personalizedRecommendations')}</h2>
           {recommendations.length > 0 ? (
             <div className="space-y-4">
               {recommendations.map((rec, index) => (
@@ -311,13 +318,13 @@ const StudentDashboard = () => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">No recommendations yet. Keep learning!</p>
+            <p className="text-gray-500 text-center py-8">{t('recommendations.noRecommendations')}</p>
           )}
         </div>
 
         {/* Recent Quiz Results */}
         <div className="card-lg">
-          <h2 className="section-title mb-6">Recent Quiz Results</h2>
+          <h2 className="section-title mb-6">{t('quiz.viewResults')}</h2>
           {quizResults.length > 0 ? (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {quizResults.slice(0, 5).map((result) => (

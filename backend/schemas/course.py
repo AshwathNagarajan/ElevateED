@@ -58,6 +58,9 @@ class CourseCreate(BaseModel):
     description: Optional[str] = None
     track_type: str
     level: str
+    duration_hours: Optional[float] = 0.0
+    instructor: Optional[str] = "ElevateED Instructor"
+    thumbnail_url: Optional[str] = None
 
 
 class CourseResponse(BaseModel):
@@ -67,6 +70,10 @@ class CourseResponse(BaseModel):
     description: Optional[str] = None
     track_type: str
     level: str
+    duration_hours: Optional[float] = 0.0
+    instructor: Optional[str] = "ElevateED Instructor"
+    rating: Optional[float] = 0.0
+    thumbnail_url: Optional[str] = None
     created_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
@@ -91,5 +98,25 @@ class CourseUpdate(BaseModel):
     description: Optional[str] = None
     track_type: Optional[str] = None
     level: Optional[str] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CourseFilters(BaseModel):
+    """Schema for applied filters"""
+    track_type: Optional[str] = None
+    level: Optional[str] = None
+
+
+class CoursePaginatedResponse(BaseModel):
+    """Schema for paginated course list response"""
+    skip: int
+    limit: int
+    total: int
+    count: int
+    page: int
+    pages: int
+    filters: CourseFilters
+    items: List[CourseResponse]
     
     model_config = ConfigDict(from_attributes=True)

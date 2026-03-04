@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import Student, Module, Lesson
 from models.user import User
-from routes.auth import get_current_user
+from routes.auth import get_current_user, get_student_for_user
 from services.recommendation_engine import (
     analyze_student_performance,
     get_student_quiz_statistics,
@@ -44,12 +44,7 @@ def get_my_recommendations(
         - score: Student's success percentage in that module
     """
     # Get student from current user
-    student = db.query(Student).filter(Student.id == current_user.id).first()
-    if not student:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Student not found for current user"
-        )
+    student = get_student_for_user(db, current_user)
     
     # Analyze student performance and get recommendations
     recommendations = analyze_student_performance(student.id, db)
@@ -77,12 +72,7 @@ def get_student_performance(
         - module_stats: Per-module performance breakdown
     """
     # Get student from current user
-    student = db.query(Student).filter(Student.id == current_user.id).first()
-    if not student:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Student not found for current user"
-        )
+    student = get_student_for_user(db, current_user)
     
     # Get detailed quiz statistics
     stats = get_student_quiz_statistics(student.id, db)
@@ -113,12 +103,7 @@ def check_next_level(
         - next_module: Details of next module if unlocked
     """
     # Get student from current user
-    student = db.query(Student).filter(Student.id == current_user.id).first()
-    if not student:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Student not found for current user"
-        )
+    student = get_student_for_user(db, current_user)
     
     # Verify module exists
     module = db.query(Module).filter(Module.id == module_id).first()
@@ -204,12 +189,7 @@ def get_practice_recommendations(
         List of practice recommendations with focus areas and difficulty
     """
     # Get student from current user
-    student = db.query(Student).filter(Student.id == current_user.id).first()
-    if not student:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Student not found for current user"
-        )
+    student = get_student_for_user(db, current_user)
     
     # Get recommendations
     recommendations = analyze_student_performance(student.id, db)

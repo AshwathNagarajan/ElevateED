@@ -47,18 +47,21 @@ def verify_token(token: str) -> dict:
             settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM]
         )
-        user_id: int = payload.get("sub")
+        user_id_raw = payload.get("sub")
         role: str = payload.get("role")
         
-        if user_id is None:
+        if user_id_raw is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token"
             )
         
+        # Convert user_id to int (it's stored as string in JWT)
+        user_id = int(user_id_raw)
+        
         return {"user_id": user_id, "role": role, "payload": payload}
     
-    except JWTError:
+    except JWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token"
