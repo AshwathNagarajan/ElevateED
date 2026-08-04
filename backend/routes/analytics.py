@@ -5,6 +5,8 @@ from database import get_db
 from models import Course, Enrollment, QuizSubmission, Quiz, Lesson, Module, LessonProgress, Student
 from models.user import User
 from routes.auth import get_current_user, require_admin
+from routes.auth import require_mentor
+from services.analytics import calculate_mentor_dashboard_stats
 from schemas.analytics import (
     CourseCompletionRateResponse,
     CourseCompletionStats,
@@ -290,3 +292,12 @@ def get_active_learners(
         daily_activity=daily_activity,
         top_active_modules=top_active_modules
     )
+
+
+@router.get("/mentor/dashboard")
+def get_mentor_dashboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_mentor)
+):
+    """Get dashboard analytics for the current mentor."""
+    return calculate_mentor_dashboard_stats(current_user.id, db)

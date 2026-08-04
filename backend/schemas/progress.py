@@ -74,5 +74,6 @@ class ProgressStatisticsResponse(BaseModel):
     total_lessons_completed: int
     overall_completion_percentage: float
     modules_progress: list = []
+    completed_lesson_ids: list[int] = []
     
     model_config = ConfigDict(from_attributes=True)

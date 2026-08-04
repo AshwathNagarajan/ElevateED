@@ -8,21 +8,21 @@ html {
 }
 
 body {
-  @apply text-gray-900 bg-gray-50;
+  @apply text-gray-900 bg-[#08111f];
 }
 
 /* Custom Component Classes */
 @layer components {
   .btn-primary {
-    @apply px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors;
+    @apply px-4 py-2 bg-slate-950 text-white rounded-lg font-bold hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20;
   }
 
   .btn-secondary {
-    @apply px-4 py-2 bg-secondary-600 text-white rounded-lg font-medium hover:bg-secondary-700 transition-colors;
+    @apply px-4 py-2 bg-cyan-300 text-slate-950 rounded-lg font-bold hover:bg-cyan-200 transition-colors shadow-lg shadow-cyan-950/20;
   }
 
   .btn-outline {
-    @apply px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors;
+    @apply px-4 py-2 border border-white/15 text-slate-100 rounded-lg font-bold hover:bg-white/10 transition-colors;
   }
 
   .card {
@@ -34,7 +34,7 @@ body {
   }
 
   .input-field {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent;
   }
 
   .section-header {
@@ -101,4 +101,344 @@ body {
 
 .animate-slideInUp {
   animation: slideInUp 0.3s ease-out;
+}
+
+/* ElevateED application theme */
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  color: #e5eef7;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(34, 211, 238, 0.18), transparent 24rem),
+    radial-gradient(circle at 88% 18%, rgba(250, 204, 21, 0.14), transparent 22rem),
+    linear-gradient(135deg, #08111f 0%, #12323c 45%, #0d1b2d 100%);
+}
+
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(34, 211, 238, 0.32) 0 1px, transparent 1px),
+    radial-gradient(circle at 80% 40%, rgba(250, 204, 21, 0.28) 0 1px, transparent 1px);
+  background-size: 34px 34px;
+  opacity: 0.13;
+}
+
+.app-shell main {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.app-shell h1,
+.app-shell h2,
+.app-shell h3,
+.app-shell .section-header,
+.app-shell .section-title {
+  color: #f8fafc !important;
+  letter-spacing: 0;
+}
+
+.app-shell p,
+.app-shell span,
+.app-shell label {
+  letter-spacing: 0;
+}
+
+.app-shell .text-gray-900,
+.app-shell .text-gray-800,
+.app-shell .text-gray-700 {
+  color: #f8fafc !important;
+}
+
+.app-shell .text-gray-600,
+.app-shell .text-gray-500,
+.app-shell .text-gray-400 {
+  color: #cbd5e1 !important;
+}
+
+.app-shell .bg-white,
+.app-shell .card,
+.app-shell .card-lg {
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.26) !important;
+  backdrop-filter: blur(16px);
+}
+
+.app-shell .bg-gray-50,
+.app-shell .bg-gray-100,
+.app-shell .bg-gray-200 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.app-shell .border-gray-100,
+.app-shell .border-gray-200,
+.app-shell .border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.app-shell input,
+.app-shell select,
+.app-shell textarea,
+.app-shell .input-field {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  color: #f8fafc !important;
+}
+
+.app-shell input::placeholder,
+.app-shell textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.app-shell select option {
+  color: #0f172a;
+}
+
+.app-shell table thead tr,
+.app-shell thead.bg-gray-50 {
+  background: rgba(8, 17, 31, 0.78) !important;
+}
+
+.app-shell tbody tr:hover,
+.app-shell .hover\:bg-gray-50:hover,
+.app-shell .hover\:bg-gray-100:hover,
+.app-shell .hover\:bg-blue-50:hover,
+.app-shell .hover\:bg-primary-50:hover {
+  background-color: rgba(34, 211, 238, 0.1) !important;
+}
+
+.app-shell .bg-gradient-to-br {
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.2);
+}
+
+.app-shell .from-blue-50,
+.app-shell .from-green-50,
+.app-shell .from-purple-50,
+.app-shell .from-sky-50,
+.app-shell .from-primary-50,
+.app-shell .from-cyan-50,
+.app-shell .from-orange-50,
+.app-shell .from-yellow-50 {
+  --tw-gradient-from: rgba(255, 255, 255, 0.13) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(255, 255, 255, 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(34, 211, 238, 0.1), var(--tw-gradient-to) !important;
+}
+
+.app-shell .to-blue-100,
+.app-shell .to-green-100,
+.app-shell .to-purple-100,
+.app-shell .to-emerald-50,
+.app-shell .to-secondary-50,
+.app-shell .to-cyan-100,
+.app-shell .to-orange-100,
+.app-shell .to-yellow-100 {
+  --tw-gradient-to: rgba(250, 204, 21, 0.1) var(--tw-gradient-to-position) !important;
+}
+
+.app-shell .rounded-xl,
+.app-shell .rounded-2xl {
+  border-radius: 8px !important;
+}
+
+.app-shell .badge-primary,
+.app-shell .bg-primary-100,
+.app-shell .bg-blue-100,
+.app-shell .bg-purple-100 {
+  background-color: rgba(34, 211, 238, 0.16) !important;
+  color: #a5f3fc !important;
+}
+
+.app-shell .bg-secondary-100,
+.app-shell .bg-green-100 {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+  color: #a7f3d0 !important;
+}
+
+.app-shell .bg-yellow-100,
+.app-shell .bg-amber-50,
+.app-shell .bg-orange-100 {
+  background-color: rgba(250, 204, 21, 0.16) !important;
+  color: #fde68a !important;
+}
+
+.app-shell .bg-red-50,
+.app-shell .bg-red-100 {
+  background-color: rgba(244, 63, 94, 0.14) !important;
+  color: #fecdd3 !important;
+}
+
+.nova-stage {
+  position: relative;
+  height: 138px;
+  perspective: 720px;
+  overflow: hidden;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.12), rgba(250, 204, 21, 0.08)),
+    radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.16), transparent 42%);
+}
+
+.nova-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 15px;
+  width: 112px;
+  height: 18px;
+  transform: translateX(-50%) rotateX(72deg);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.34);
+  filter: blur(5px);
+}
+
+.nova-character {
+  position: absolute;
+  left: 50%;
+  bottom: 25px;
+  width: 112px;
+  height: 96px;
+  transform-style: preserve-3d;
+  animation: novaFloat 4.8s ease-in-out infinite;
+}
+
+.nova-head,
+.nova-core,
+.nova-arm,
+.nova-orbit {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+
+.nova-head {
+  left: 30px;
+  top: 0;
+  width: 52px;
+  height: 48px;
+  border-radius: 44% 44% 40% 40%;
+  background: linear-gradient(145deg, #e0faff, #22d3ee 52%, #0e7490);
+  box-shadow:
+    inset -8px -10px 18px rgba(8, 47, 73, 0.42),
+    inset 7px 7px 12px rgba(255, 255, 255, 0.5),
+    0 18px 32px rgba(34, 211, 238, 0.26);
+  transform: translateZ(34px) rotateX(-6deg);
+}
+
+.nova-core {
+  left: 22px;
+  top: 42px;
+  width: 68px;
+  height: 50px;
+  border-radius: 22px 22px 28px 28px;
+  background: linear-gradient(145deg, #fde68a, #facc15 52%, #b45309);
+  box-shadow:
+    inset -10px -10px 18px rgba(120, 53, 15, 0.35),
+    inset 8px 8px 14px rgba(255, 255, 255, 0.42),
+    0 20px 36px rgba(250, 204, 21, 0.2);
+  transform: translateZ(18px) rotateX(7deg);
+}
+
+.nova-eye {
+  position: absolute;
+  top: 18px;
+  width: 7px;
+  height: 9px;
+  border-radius: 999px;
+  background: #082f49;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22);
+}
+
+.nova-eye-left {
+  left: 15px;
+}
+
+.nova-eye-right {
+  right: 15px;
+}
+
+.nova-smile {
+  position: absolute;
+  left: 20px;
+  top: 31px;
+  width: 13px;
+  height: 6px;
+  border-bottom: 2px solid rgba(8, 47, 73, 0.78);
+  border-radius: 0 0 999px 999px;
+}
+
+.nova-badge {
+  position: absolute;
+  left: 50%;
+  top: 16px;
+  min-width: 26px;
+  height: 22px;
+  transform: translateX(-50%) translateZ(18px);
+  border-radius: 999px;
+  background: rgba(8, 17, 31, 0.82);
+  color: #fde68a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.nova-arm {
+  top: 54px;
+  width: 18px;
+  height: 42px;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #67e8f9, #0891b2);
+  box-shadow: inset -5px -6px 10px rgba(8, 47, 73, 0.36);
+}
+
+.nova-arm-left {
+  left: 8px;
+  transform: rotateZ(22deg) translateZ(8px);
+}
+
+.nova-arm-right {
+  right: 8px;
+  transform: rotateZ(-22deg) translateZ(8px);
+  animation: novaWave 2.4s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+.nova-orbit {
+  left: 7px;
+  top: 26px;
+  width: 98px;
+  height: 56px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+}
+
+.nova-orbit-one {
+  transform: rotateX(68deg) rotateZ(12deg) translateZ(6px);
+}
+
+.nova-orbit-two {
+  transform: rotateX(66deg) rotateZ(-52deg) translateZ(12px);
+}
+
+@keyframes novaFloat {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0) rotateY(-14deg);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-9px) rotateY(14deg);
+  }
+}
+
+@keyframes novaWave {
+  0%,
+  100% {
+    transform: rotateZ(-22deg) translateZ(8px);
+  }
+  50% {
+    transform: rotateZ(-48deg) translateZ(16px);
+  }
 }

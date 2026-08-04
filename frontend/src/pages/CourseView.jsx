@@ -11,12 +11,15 @@ import {
   Users,
   Star,
   CheckCircle2,
-  Play
+  Play,
+  Target,
+  Trophy,
+  Sparkles
 } from 'lucide-react'
 import LessonListItem from '../components/LessonListItem'
 import LessonContent from '../components/LessonContent'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 const CourseView = () => {
   const { id } = useParams()
@@ -87,8 +90,6 @@ const CourseView = () => {
         })) || []
       }
 
-      setCourse(transformedCourse)
-
       // Check enrollment status
       try {
         const enrollResponse = await fetch(`${API_BASE_URL}/enrollments/my-courses`, {
@@ -96,8 +97,36 @@ const CourseView = () => {
         })
         if (enrollResponse.ok) {
           const enrollments = await enrollResponse.json()
-          const enrolled = enrollments.some(e => e.course_id === parseInt(id))
+          const currentEnrollment = enrollments.find(e => e.course_id === parseInt(id))
+          const enrolled = Boolean(currentEnrollment)
           setIsEnrolled(enrolled)
+          if (currentEnrollment) {
+            transformedCourse.progress_percentage = Math.round(currentEnrollment.progress_percentage || 0)
+          }
+
+          if (enrolled) {
+            const progressResponse = await fetch(`${API_BASE_URL}/lessons/course/${id}/progress`, {
+              headers: getAuthHeaders()
+            })
+            if (progressResponse.ok) {
+              const progressData = await progressResponse.json()
+              const lessonIds = new Set(progressData.completed_lesson_ids || [])
+              setCompletedLessons(lessonIds)
+              transformedCourse.progress_percentage = Math.round(progressData.overall_completion_percentage || transformedCourse.progress_percentage || 0)
+              transformedCourse.modules = transformedCourse.modules.map(module => {
+                const moduleProgress = (progressData.modules_progress || []).find(item => item.module_id === module.id)
+                return {
+                  ...module,
+                  completion_percentage: Math.round(moduleProgress?.completion_percentage || 0),
+                  completed_lessons: moduleProgress?.completed_lessons || 0,
+                  lessons: module.lessons.map(lesson => ({
+                    ...lesson,
+                    completed: lessonIds.has(lesson.id)
+                  }))
+                }
+              })
+            }
+          }
         }
       } catch (e) {
         console.error('Failed to check enrollment:', e)
@@ -105,8 +134,17 @@ const CourseView = () => {
 
       // Auto-expand first module
       if (transformedCourse.modules.length > 0) {
-        setExpandedModuleId(transformedCourse.modules[0].id)
+        const firstOpenModule = transformedCourse.modules.find(module => (module.completion_percentage || 0) < 100) || transformedCourse.modules[0]
+        const completedIds = new Set(
+          transformedCourse.modules.flatMap(module =>
+            module.lessons.filter(lesson => lesson.completed).map(lesson => lesson.id)
+          )
+        )
+        setExpandedModuleId(firstOpenModule.id)
+        setSelectedLesson(firstOpenModule.lessons.find(lesson => !completedIds.has(lesson.id)) || firstOpenModule.lessons[0] || null)
       }
+
+      setCourse(transformedCourse)
 
       setLoading(false)
     } catch (err) {
@@ -141,7 +179,16 @@ const CourseView = () => {
         
         setCourse({
           ...course,
-          progress_percentage: newProgress
+          progress_percentage: newProgress,
+          modules: course.modules.map(module => ({
+            ...module,
+            completed_lessons: module.lessons.filter(lesson => newCompleted.has(lesson.id)).length,
+            completion_percentage: Math.round((module.lessons.filter(lesson => newCompleted.has(lesson.id)).length / module.lessons.length) * 100),
+            lessons: module.lessons.map(lesson => ({
+              ...lesson,
+              completed: newCompleted.has(lesson.id)
+            }))
+          }))
         })
       }
 
@@ -182,6 +229,14 @@ const CourseView = () => {
 
   const getCompletedCount = () => {
     return completedLessons.size
+  }
+
+  const getNextLesson = () => {
+    for (const module of course?.modules || []) {
+      const lesson = module.lessons.find(item => !completedLessons.has(item.id))
+      if (lesson) return lesson
+    }
+    return course?.modules?.[0]?.lessons?.[0] || null
   }
 
   if (loading) {
@@ -230,26 +285,26 @@ const CourseView = () => {
       {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+        className="flex items-center gap-2 text-slate-300 hover:text-white mb-6"
       >
         <ChevronLeft size={20} />
         Back
       </button>
 
       {/* Course Header */}
-      <div className="mb-8">
+      <div className="mb-8 overflow-hidden rounded-2xl border border-white/12 bg-gradient-to-br from-cyan-300/15 via-white/10 to-amber-300/10 shadow-2xl shadow-black/20 backdrop-blur">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-6">
-          <div className="flex-1">
+          <div className="flex-1 p-6 sm:p-8 pb-0 lg:pb-8">
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded">
+              <span className="px-3 py-1 bg-cyan-300/15 text-cyan-100 border border-cyan-200/20 text-sm font-bold rounded-full">
                 {course.track_type}
               </span>
-              <span className="px-2 py-1 bg-purple-100 text-purple-700 text-sm font-medium rounded">
+              <span className="px-3 py-1 bg-amber-300/15 text-amber-100 border border-amber-200/20 text-sm font-bold rounded-full">
                 {course.level}
               </span>
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">{course.title}</h1>
-            <p className="text-gray-600 max-w-2xl mb-4">{course.description}</p>
+            <h1 className="text-4xl font-black text-white mb-3">{course.title}</h1>
+            <p className="text-slate-300 max-w-2xl mb-4">{course.description}</p>
             
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
               <div className="flex items-center gap-1">
@@ -268,22 +323,44 @@ const CourseView = () => {
             </div>
           </div>
 
-          {/* Enroll Button */}
-          {!isEnrolled && (
-            <button
-              onClick={handleEnroll}
-              className="px-8 py-3 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              Enroll Now
-            </button>
-          )}
+          <div className="p-6 sm:p-8 lg:w-80">
+            <div className="rounded-xl bg-white border border-gray-100 p-5 shadow-2xl shadow-black/20">
+              <div className="flex items-center gap-2 mb-3">
+                <Target size={18} className="text-sky-600" />
+                <p className="font-bold text-gray-900">Your next move</p>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                {isEnrolled ? (getNextLesson()?.title || 'Review completed lessons') : 'Enroll and start with the first short lesson.'}
+              </p>
+              {isEnrolled ? (
+                <button
+                  onClick={() => setSelectedLesson(getNextLesson())}
+                  className="w-full btn-primary flex items-center justify-center gap-2"
+                >
+                  <Play size={18} />
+                  Continue path
+                </button>
+              ) : (
+                <button
+                  onClick={handleEnroll}
+                  className="w-full btn-primary flex items-center justify-center gap-2"
+                >
+                  <Sparkles size={18} />
+                  Enroll Now
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Progress Bar (if enrolled) */}
         {isEnrolled && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="mx-6 sm:mx-8 mb-6 sm:mb-8 bg-white rounded-xl border border-gray-100 p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-900">Your Progress</h3>
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Trophy size={18} className="text-amber-500" />
+                Your Progress
+              </h3>
               <span className="text-sm font-bold text-primary-600">
                 {getCompletedCount()} of {getTotalLessons()} lessons completed
               </span>
@@ -306,10 +383,10 @@ const CourseView = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Modules Sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg border border-gray-200 sticky top-4">
+          <div className="bg-white rounded-lg border border-gray-200 sticky top-20 shadow-2xl shadow-black/20">
             <div className="p-4 border-b border-gray-200">
               <h2 className="font-semibold text-gray-900">Course Content</h2>
-              <p className="text-xs text-gray-500 mt-1">{course.modules.length} modules • {getTotalLessons()} lessons</p>
+              <p className="text-xs text-gray-500 mt-1">{course.modules.length} modules - {getTotalLessons()} lessons</p>
             </div>
             
             <div className="divide-y divide-gray-200 max-h-[calc(100vh-200px)] overflow-y-auto">
@@ -321,7 +398,9 @@ const CourseView = () => {
                   >
                     <div className="flex-1">
                       <span className="font-semibold text-sm text-gray-900">{module.title}</span>
-                      <p className="text-xs text-gray-500 mt-0.5">{module.lessons.length} lessons</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {module.completed_lessons || 0} of {module.lessons.length} done
+                      </p>
                     </div>
                     {expandedModuleId === module.id ? (
                       <ChevronUp size={18} className="text-gray-400" />

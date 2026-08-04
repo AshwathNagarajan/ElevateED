@@ -10,15 +10,19 @@ import {
   Clock,
   ArrowRight,
   RefreshCw,
-  Target
+  Target,
+  Compass,
+  HeartHandshake,
+  Sparkles
 } from 'lucide-react'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 const Recommendations = () => {
   const { t } = useTranslation()
   const [recommendations, setRecommendations] = useState([])
   const [courseRecommendations, setCourseRecommendations] = useState([])
+  const [guidancePlan, setGuidancePlan] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -55,8 +59,27 @@ const Recommendations = () => {
       // Fetch course recommendations (not enrolled courses for the user)
       let courseRecs = []
       try {
+        const guidanceResponse = await fetch(`${API_BASE_URL}/recommendations/guidance-plan`, {
+          headers: getAuthHeaders()
+        })
+        if (guidanceResponse.ok) {
+          const guidanceData = await guidanceResponse.json()
+          setGuidancePlan(guidanceData)
+          courseRecs = (guidanceData.recommended_courses || []).map(course => ({
+            id: course.course_id,
+            course_id: course.course_id,
+            title: course.title,
+            description: course.reason || 'Recommended from your current learning pattern',
+            track_type: course.track_type,
+            level: course.level,
+            duration_hours: course.duration_hours || 0,
+            rating: course.rating || null,
+            reason: course.reason || 'Matches interest and learning pattern'
+          }))
+        }
+
         // Fetch user's enrollments to exclude already enrolled courses
-        const enrollmentsResponse = await fetch(`${API_BASE_URL}/enrollments/my-enrollments`, {
+        const enrollmentsResponse = await fetch(`${API_BASE_URL}/enrollments/my-courses`, {
           headers: getAuthHeaders()
         })
         const enrolledCourseIds = new Set()
@@ -65,10 +88,12 @@ const Recommendations = () => {
           enrollments.forEach(e => enrolledCourseIds.add(e.course_id))
         }
 
-        const courseResponse = await fetch(`${API_BASE_URL}/courses?limit=10`, {
-          headers: getAuthHeaders()
-        })
-        if (courseResponse.ok) {
+        const courseResponse = courseRecs.length === 0
+          ? await fetch(`${API_BASE_URL}/courses?limit=10`, {
+              headers: getAuthHeaders()
+            })
+          : null
+        if (courseResponse?.ok) {
           const data = await courseResponse.json()
           // Filter out already enrolled courses and limit to 6
           courseRecs = (data.items || [])
@@ -99,6 +124,14 @@ const Recommendations = () => {
       console.error('Recommendations fetch error:', err)
       setError('Failed to load recommendations')
       setLoading(false)
+    }
+  }
+
+  const getSupportTone = (level) => {
+    switch (level) {
+      case 'high': return 'bg-rose-50 text-rose-700 border-rose-200'
+      case 'medium': return 'bg-amber-50 text-amber-700 border-amber-200'
+      default: return 'bg-emerald-50 text-emerald-700 border-emerald-200'
     }
   }
 
@@ -144,14 +177,18 @@ const Recommendations = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col gap-4 rounded-lg border border-white/12 bg-white/10 p-6 mb-8 shadow-2xl shadow-black/20 backdrop-blur md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('recommendations.title')}</h1>
-          <p className="text-gray-600">{t('recommendations.basedOnProgress')}</p>
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-200/20 bg-amber-300/10 px-3 py-1 text-sm font-bold text-amber-100">
+            <Sparkles size={16} />
+            ML guidance room
+          </div>
+          <h1 className="text-4xl font-black text-white mb-2">{t('recommendations.title')}</h1>
+          <p className="text-slate-300">{t('recommendations.basedOnProgress')}</p>
         </div>
         <button
           onClick={fetchRecommendations}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-cyan-300 text-slate-950 rounded-lg font-bold hover:bg-cyan-200 transition-colors"
         >
           <RefreshCw size={18} />
           {t('common.retry')}
@@ -179,10 +216,56 @@ const Recommendations = () => {
       )}
 
       {!loading && !error && (
+        <>
+        {guidancePlan && (
+          <div className="mb-8 overflow-hidden rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-emerald-50 shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.1fr]">
+              <div className="p-6 sm:p-8">
+                <div className="flex flex-wrap items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-sky-600 flex items-center justify-center">
+                    <Compass className="text-white" size={24} />
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-white border border-sky-100 text-xs font-bold uppercase text-sky-700">
+                    Guided path
+                  </span>
+                  <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold capitalize ${getSupportTone(guidancePlan.support_level)}`}>
+                    <HeartHandshake size={14} />
+                    {guidancePlan.support_level} support
+                  </span>
+                </div>
+                <h2 className="text-3xl font-bold text-gray-950 mb-3">{guidancePlan.suggested_track?.track || 'Learning path'}</h2>
+                <p className="text-gray-700 leading-relaxed">{guidancePlan.guidance_summary}</p>
+              </div>
+
+              <div className="p-6 sm:p-8 bg-white/70 border-t lg:border-t-0 lg:border-l border-white">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles size={18} className="text-sky-600" />
+                  <p className="font-bold text-gray-950">Recommended order</p>
+                </div>
+                <div className="space-y-3">
+                  {(guidancePlan.next_steps || []).slice(0, 4).map((step, index) => (
+                    <div key={`${step.type}-${index}`} className="rounded-xl bg-white border border-gray-100 p-4">
+                      <div className="flex gap-3">
+                        <div className="w-7 h-7 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs font-bold shrink-0">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-950 text-sm">{step.title}</p>
+                          <p className="text-xs text-gray-500 mt-1">{step.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Skill-Based Recommendations */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8 shadow-2xl shadow-black/20">
               <div className="flex items-center gap-2 mb-6">
                 <Lightbulb className="text-primary-600" size={24} />
                 <h2 className="text-xl font-bold text-gray-900">Learning Insights</h2>
@@ -241,7 +324,7 @@ const Recommendations = () => {
 
           {/* Course Recommendations Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-20 shadow-2xl shadow-black/20">
               <div className="flex items-center gap-2 mb-6">
                 <Star className="text-yellow-500" size={24} />
                 <h2 className="text-xl font-bold text-gray-900">Courses to Explore</h2>
@@ -305,6 +388,7 @@ const Recommendations = () => {
             </div>
           </div>
         </div>
+        </>
       )}
     </div>
   )

@@ -22,6 +22,7 @@ class Course(Base):
     instructor = Column(String(255), nullable=True, default="ElevateED Instructor")
     rating = Column(Float, nullable=True, default=0.0)  # Average rating 0-5
     thumbnail_url = Column(String(512), nullable=True)
+    mentor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     
     # Timestamps
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
@@ -33,6 +34,7 @@ class Course(Base):
         cascade="all, delete-orphan",
         lazy="joined"
     )
+    mentor = relationship("User", foreign_keys=[mentor_id], lazy="joined")
     
     def __repr__(self):
         return f"<Course(id={self.id}, title={self.title}, track_type={self.track_type}, level={self.level})>"

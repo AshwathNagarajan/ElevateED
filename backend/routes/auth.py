@@ -1,15 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import datetime, timezone
 from database import get_db
 from models.user import User, RoleEnum
 from models.student import Student
-from schemas.auth import UserCreate, UserResponse, UserLogin, TokenResponse
+from schemas.auth import UserCreate, UserResponse, UserLogin, TokenPairResponse, RefreshTokenRequest, LogoutResponse
+from core.security import TokenManager
+from services.token_blacklist_service import TokenBlacklistService
 from services.auth import (
     hash_password,
     verify_password,
-    create_access_token,
     verify_token,
     require_role
 )
@@ -31,6 +32,11 @@ def get_current_user(
 ) -> User:
     """Dependency to get current authenticated user"""
     token = credentials.credentials
+    if TokenBlacklistService.is_blacklisted(token, db):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked"
+        )
     token_data = verify_token(token)
     
     user = db.query(User).filter(User.id == token_data["user_id"]).first()
@@ -124,7 +130,7 @@ def register_user(
     
     return db_user
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenPairResponse)
 def login(
     credentials: UserLogin,
     db: Session = Depends(get_db)
@@ -141,11 +147,68 @@ def login(
     
     # Create access token - convert role enum to string value, sub must be string
     role_str = user.role.value if hasattr(user.role, 'value') else str(user.role)
-    access_token = create_access_token(
-        data={"sub": str(user.id), "role": role_str}
-    )
+    access_token = TokenManager.create_access_token(user.id, role_str)
+    refresh_token = TokenManager.create_refresh_token(user.id)
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "expires_in_minutes": TokenManager.ACCESS_TOKEN_EXPIRE_MINUTES,
+    }
+
+
+@router.post("/refresh", response_model=TokenPairResponse)
+def refresh_token(
+    request: RefreshTokenRequest,
+    db: Session = Depends(get_db)
+):
+    """Exchange a valid refresh token for a new token pair."""
+    if TokenBlacklistService.is_blacklisted(request.refresh_token, db):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has been revoked"
+        )
+
+    payload = TokenManager.verify_token(request.refresh_token, token_type="refresh")
+    user_id = int(payload["sub"])
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+
+    role_str = user.role.value if hasattr(user.role, 'value') else str(user.role)
+    access_token = TokenManager.create_access_token(user.id, role_str)
+    refresh_token_value = TokenManager.create_refresh_token(user.id)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token_value,
+        "token_type": "bearer",
+        "expires_in_minutes": TokenManager.ACCESS_TOKEN_EXPIRE_MINUTES,
+    }
+
+
+@router.post("/logout", response_model=LogoutResponse)
+def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """Revoke the current access token."""
+    token = credentials.credentials
+    if TokenBlacklistService.is_blacklisted(token, db):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has already been revoked"
+        )
+
+    payload = TokenManager.verify_token(token, token_type="access")
+    expires_at = datetime.fromtimestamp(payload["exp"], tz=timezone.utc).replace(tzinfo=None)
+    TokenBlacklistService.add_to_blacklist(token, int(payload["sub"]), expires_at, db)
+    return {"success": True}
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user_info(

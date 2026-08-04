@@ -61,6 +61,7 @@ class CourseCreate(BaseModel):
     duration_hours: Optional[float] = 0.0
     instructor: Optional[str] = "ElevateED Instructor"
     thumbnail_url: Optional[str] = None
+    mentor_id: Optional[int] = None
 
 
 class CourseResponse(BaseModel):
@@ -74,7 +75,9 @@ class CourseResponse(BaseModel):
     instructor: Optional[str] = "ElevateED Instructor"
     rating: Optional[float] = 0.0
     thumbnail_url: Optional[str] = None
+    mentor_id: Optional[int] = None
     created_at: datetime
+    mentor_id: Optional[int] = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -98,6 +101,10 @@ class CourseUpdate(BaseModel):
     description: Optional[str] = None
     track_type: Optional[str] = None
     level: Optional[str] = None
+    duration_hours: Optional[float] = None
+    instructor: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    mentor_id: Optional[int] = None
     
     model_config = ConfigDict(from_attributes=True)
 

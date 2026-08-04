@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import StudyPartner3D from './components/StudyPartner3D'
 import AdminDashboard from './components/AdminDashboard'
+import MentorDashboard from './components/MentorDashboard'
+import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Courses from './pages/Courses'
@@ -9,119 +12,68 @@ import CourseView from './pages/CourseView'
 import MyCourses from './pages/MyCourses'
 import Recommendations from './pages/Recommendations'
 import AdminCourses from './pages/AdminCourses'
+import AdminStudents from './pages/AdminStudents'
+import AdminMentors from './pages/AdminMentors'
+import MentorCourses from './pages/MentorCourses'
+import MentorProfile from './pages/MentorProfile'
+import MentorSignup from './pages/MentorSignup'
+import StudentProfile from './pages/StudentProfile'
+import { useAuth } from './context/AuthContext'
 import './App.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [userRole, setUserRole] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Check for existing authentication on app load
-  useEffect(() => {
-    const validateToken = async () => {
-      const token = localStorage.getItem('token')
-      
-      if (!token) {
-        setIsLoading(false)
-        return
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
-
-        if (response.ok) {
-          const user = await response.json()
-          // Use the role from the server response
-          const role = user.role?.toLowerCase() || 'student'
-          setUserRole(role)
-          setIsAuthenticated(true)
-          localStorage.setItem('userRole', role)
-        } else {
-          // Token is invalid or expired - clear storage
-          localStorage.removeItem('token')
-          localStorage.removeItem('userEmail')
-          localStorage.removeItem('userRole')
-        }
-      } catch (err) {
-        console.error('Token validation failed:', err)
-        // Keep existing localStorage values for offline support
-        const savedRole = localStorage.getItem('userRole')
-        if (savedRole) {
-          setUserRole(savedRole)
-          setIsAuthenticated(true)
-        }
-      }
-      
-      setIsLoading(false)
-    }
-
-    validateToken()
-  }, [])
+  const { isAuthenticated, userRole, isLoading, login, logout } = useAuth()
 
   const handleLogin = (role) => {
-    setIsAuthenticated(true)
-    setUserRole(role)
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('userEmail')
-    localStorage.removeItem('userRole')
-    setIsAuthenticated(false)
-    setUserRole(null)
+    login({
+      access_token: localStorage.getItem('token'),
+      email: localStorage.getItem('userEmail')
+    }, role)
   }
 
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen bg-[#08111f] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-300"></div>
       </div>
     )
   }
 
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />
-  }
-
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar userRole={userRole} onLogout={handleLogout} />
-        <main>
+      <div className="app-shell min-h-screen">
+        {isAuthenticated && <Navbar userRole={userRole} onLogout={logout} />}
+        {isAuthenticated && <StudyPartner3D userRole={userRole} />}
+        <main className="relative z-10">
           <Routes>
-            {/* Dashboard Route */}
+            <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login onLogin={handleLogin} />} />
+            <Route path="/mentor-signup" element={isAuthenticated ? <Navigate to="/" replace /> : <MentorSignup onLogin={handleLogin} />} />
+
             <Route
               path="/"
               element={
-                userRole === 'admin' ? (
-                  <AdminDashboard />
-                ) : (
-                  <Dashboard userRole={userRole} />
-                )
+                <ProtectedRoute allowedRoles={['student', 'mentor', 'admin']}>
+                  {userRole === 'admin' ? <AdminDashboard /> : userRole === 'mentor' ? <MentorDashboard /> : <Dashboard />}
+                </ProtectedRoute>
               }
             />
-            
-            {/* Course Routes */}
-            <Route path="/courses" element={userRole === 'admin' ? <AdminCourses /> : <Courses />} />
-            <Route path="/course/:id" element={<CourseView />} />
-            
-            {/* Student Routes */}
-            <Route path="/my-courses" element={<MyCourses />} />
-            <Route path="/recommendations" element={<Recommendations />} />
-            
-            {/* Admin Routes */}
-            <Route path="/admin/courses" element={<AdminCourses />} />
-            
-            {/* Legacy redirect */}
+
+            <Route path="/courses" element={<ProtectedRoute allowedRoles={['student', 'mentor', 'admin']}>{userRole === 'admin' ? <AdminCourses /> : <Courses />}</ProtectedRoute>} />
+            <Route path="/course/:id" element={<ProtectedRoute allowedRoles={['student', 'mentor', 'admin']}><CourseView /></ProtectedRoute>} />
+            <Route path="/my-courses" element={<ProtectedRoute allowedRoles={['student']}><MyCourses /></ProtectedRoute>} />
+            <Route path="/recommendations" element={<ProtectedRoute allowedRoles={['student']}><Recommendations /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute allowedRoles={['student']}><StudentProfile /></ProtectedRoute>} />
+
+            <Route path="/admin/courses" element={<ProtectedRoute allowedRoles={['admin']}><AdminCourses /></ProtectedRoute>} />
+            <Route path="/admin/students" element={<ProtectedRoute allowedRoles={['admin']}><AdminStudents /></ProtectedRoute>} />
+            <Route path="/admin/mentors" element={<ProtectedRoute allowedRoles={['admin']}><AdminMentors /></ProtectedRoute>} />
+
+            <Route path="/mentor/courses" element={<ProtectedRoute allowedRoles={['mentor']}><MentorCourses /></ProtectedRoute>} />
+            <Route path="/mentor/profile" element={<ProtectedRoute allowedRoles={['mentor']}><MentorProfile /></ProtectedRoute>} />
+
             <Route path="/dashboard" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />} />
           </Routes>
         </main>
       </div>

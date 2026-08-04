@@ -8,6 +8,9 @@ class RoleEnum(str, enum.Enum):
     STUDENT = "student"
     MENTOR = "mentor"
     ADMIN = "admin"
+    student = "student"
+    mentor = "mentor"
+    admin = "admin"
 
 class User(Base):
     """User model for authentication"""

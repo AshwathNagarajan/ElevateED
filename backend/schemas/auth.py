@@ -7,6 +7,19 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+class TokenPairResponse(TokenResponse):
+    """Schema for access/refresh token response"""
+    refresh_token: str
+    expires_in_minutes: int = 15
+
+class RefreshTokenRequest(BaseModel):
+    """Schema for refreshing an access token"""
+    refresh_token: str
+
+class LogoutResponse(BaseModel):
+    """Schema for logout response"""
+    success: bool
+
 class TokenData(BaseModel):
     """Schema for token data"""
     user_id: int

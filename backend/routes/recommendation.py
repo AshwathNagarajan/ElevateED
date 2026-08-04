@@ -9,6 +9,7 @@ from services.recommendation_engine import (
     get_student_quiz_statistics,
     unlock_next_level
 )
+from services.guidance_engine import build_guidance_plan
 from schemas.recommendation import (
     RecommendationResponse,
     StudentPerformanceResponse,
@@ -53,6 +54,18 @@ def get_my_recommendations(
         return []
     
     return recommendations
+
+
+@router.get("/guidance-plan", response_model=dict)
+def get_guidance_plan(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Build a student guidance plan from interest, pace, quiz, lesson, and attendance signals.
+    """
+    student = get_student_for_user(db, current_user)
+    return build_guidance_plan(current_user, student, db)
 
 
 @router.get("/performance", response_model=StudentPerformanceResponse)

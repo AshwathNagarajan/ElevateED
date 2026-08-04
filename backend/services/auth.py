@@ -4,6 +4,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
 from config import settings
+from uuid import uuid4
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -30,6 +31,9 @@ def create_access_token(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     
+    to_encode.setdefault("type", "access")
+    to_encode.setdefault("iat", datetime.now(timezone.utc))
+    to_encode.setdefault("jti", str(uuid4()))
     to_encode.update({"exp": expire})
     
     encoded_jwt = jwt.encode(

@@ -6,6 +6,7 @@ from models.user import User
 from schemas.enrollment import (
     EnrollmentCreate,
     EnrollmentCreateRequest,
+    EnrollmentUpdate,
     EnrollmentResponse,
     EnrollmentDetailResponse,
     StudentEnrollmentsResponse,
@@ -172,7 +173,8 @@ def get_course_progress(
 @router.put("/update-progress/{enrollment_id}", response_model=EnrollmentResponse)
 def update_course_progress(
     enrollment_id: int,
-    lessons_completed: int,
+    update: EnrollmentUpdate | None = None,
+    lessons_completed: int | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -197,21 +199,30 @@ def update_course_progress(
             detail="Enrollment not found"
         )
     
-    # Get total number of lessons in the course
-    total_lessons = db.query(func.count(Lesson.id)).join(
-        Module, Lesson.module_id == Module.id
-    ).filter(
-        Module.course_id == enrollment.course_id
-    ).scalar()
-    
-    if total_lessons == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Course has no lessons"
-        )
-    
-    # Calculate progress percentage
-    progress_percentage = (lessons_completed / total_lessons) * 100
+    if update and update.progress_percentage is not None:
+        progress_percentage = update.progress_percentage
+    else:
+        if lessons_completed is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Either progress_percentage or lessons_completed is required"
+            )
+
+        # Get total number of lessons in the course
+        total_lessons = db.query(func.count(Lesson.id)).join(
+            Module, Lesson.module_id == Module.id
+        ).filter(
+            Module.course_id == enrollment.course_id
+        ).scalar()
+        
+        if total_lessons == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Course has no lessons"
+            )
+        
+        # Calculate progress percentage
+        progress_percentage = (lessons_completed / total_lessons) * 100
     
     # Ensure progress doesn't exceed 100%
     if progress_percentage > 100:
@@ -223,6 +234,8 @@ def update_course_progress(
     # Mark as completed if progress reaches 100%
     if progress_percentage >= 100:
         enrollment.completed = True
+    elif update and update.completed is not None:
+        enrollment.completed = update.completed
     
     db.commit()
     db.refresh(enrollment)

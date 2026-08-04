@@ -9,6 +9,10 @@ class StudentPredictionInput(BaseModel):
     creative_score: int
     confidence_level: float
     attendance_rate: float
+    quiz_success_rate: float = 0.5
+    lesson_completion_rate: float = 0.5
+    learning_pace: float = 0.5
+    consistency_score: float = 0.5
 
 class PredictionResponse(BaseModel):
     """Schema for prediction response"""

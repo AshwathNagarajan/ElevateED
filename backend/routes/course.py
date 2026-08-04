@@ -42,6 +42,10 @@ def create_course(
         description=course.description,
         track_type=course.track_type,
         level=course.level,
+        duration_hours=course.duration_hours,
+        instructor=course.instructor,
+        thumbnail_url=course.thumbnail_url,
+        mentor_id=course.mentor_id,
     )
     db.add(db_course)
     db.commit()
@@ -201,6 +205,14 @@ def update_course(
         course.track_type = course_update.track_type
     if course_update.level is not None:
         course.level = course_update.level
+    if course_update.duration_hours is not None:
+        course.duration_hours = course_update.duration_hours
+    if course_update.instructor is not None:
+        course.instructor = course_update.instructor
+    if course_update.thumbnail_url is not None:
+        course.thumbnail_url = course_update.thumbnail_url
+    if course_update.mentor_id is not None:
+        course.mentor_id = course_update.mentor_id
     
     db.commit()
     db.refresh(course)

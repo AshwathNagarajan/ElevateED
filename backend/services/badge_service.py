@@ -43,6 +43,7 @@ def check_and_award_badges(student_id: int, db: Session) -> List[Dict]:
     if not student:
         logger.warning(f"Student {student_id} not found for badge check")
         return []
+    user_id = student.user_id
     
     newly_earned = []
     
@@ -62,11 +63,11 @@ def check_and_award_badges(student_id: int, db: Session) -> List[Dict]:
         
         # Check condition and award if met
         if badge.condition_type.value == "complete_course":
-            if _check_complete_course(student_id, db):
+            if _check_complete_course(user_id, db):
                 newly_earned.append(_award_badge(student_id, badge, db))
         
         elif badge.condition_type.value == "learning_streak":
-            if _check_learning_streak(student_id, db):
+            if _check_learning_streak(user_id, db):
                 newly_earned.append(_award_badge(student_id, badge, db))
         
         elif badge.condition_type.value == "high_score":
@@ -82,11 +83,11 @@ def check_and_award_badges(student_id: int, db: Session) -> List[Dict]:
                 newly_earned.append(_award_badge(student_id, badge, db))
         
         elif badge.condition_type.value == "first_lesson":
-            if _check_first_lesson(student_id, db):
+            if _check_first_lesson(user_id, db):
                 newly_earned.append(_award_badge(student_id, badge, db))
         
         elif badge.condition_type.value == "module_completion":
-            if _check_module_completion(student_id, db):
+            if _check_module_completion(user_id, db):
                 newly_earned.append(_award_badge(student_id, badge, db))
         
         elif badge.condition_type.value == "practice_dedication":
@@ -98,22 +99,22 @@ def check_and_award_badges(student_id: int, db: Session) -> List[Dict]:
 
 # ==================== Badge Condition Checkers ====================
 
-def _check_complete_course(student_id: int, db: Session) -> bool:
+def _check_complete_course(user_id: int, db: Session) -> bool:
     """Check if student has completed 1+ course."""
     completed_courses = db.query(Enrollment).filter(
         and_(
-            Enrollment.student_id == student_id,
+            Enrollment.student_id == user_id,
             Enrollment.completed == True
         )
     ).count()
     return completed_courses >= 1
 
 
-def _check_learning_streak(student_id: int, db: Session) -> bool:
+def _check_learning_streak(user_id: int, db: Session) -> bool:
     """Check if student has 7+ consecutive days of learning."""
     # Get all lesson progress records ordered by date
     progress_records = db.query(LessonProgress).filter(
-        LessonProgress.student_id == student_id
+        LessonProgress.student_id == user_id
     ).order_by(LessonProgress.started_at).all()
     
     if not progress_records:
@@ -181,19 +182,11 @@ def _check_perfect_attendance(student_id: int, db: Session) -> bool:
     return all_present == len(attendance_records)
 
 
-def _check_first_lesson(student_id: int, db: Session) -> bool:
-    """Check if student has completed first lesson."""
-    # Get first lesson ever created
-    first_lesson = db.query(Lesson).order_by(Lesson.id).first()
-    
-    if not first_lesson:
-        return False
-    
-    # Check if student completed this lesson
+def _check_first_lesson(user_id: int, db: Session) -> bool:
+    """Check if student has completed any first lesson."""
     completed = db.query(LessonProgress).filter(
         and_(
-            LessonProgress.student_id == student_id,
-            LessonProgress.lesson_id == first_lesson.id,
+            LessonProgress.student_id == user_id,
             LessonProgress.completed == True
         )
     ).first()
@@ -201,7 +194,7 @@ def _check_first_lesson(student_id: int, db: Session) -> bool:
     return completed is not None
 
 
-def _check_module_completion(student_id: int, db: Session) -> bool:
+def _check_module_completion(user_id: int, db: Session) -> bool:
     """Check if student has completed 1+ module."""
     # A module is complete if all its lessons are completed
     modules = db.query(Module).all()
@@ -213,7 +206,7 @@ def _check_module_completion(student_id: int, db: Session) -> bool:
         
         completed_lessons = db.query(LessonProgress).filter(
             and_(
-                LessonProgress.student_id == student_id,
+                LessonProgress.student_id == user_id,
                 Lesson.module_id == module.id,
                 LessonProgress.completed == True
             )

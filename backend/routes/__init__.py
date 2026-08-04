@@ -9,6 +9,8 @@ from routes.lesson import router as lesson_router
 from routes.quiz import router as quiz_router
 from routes.recommendation import router as recommendation_router
 from routes.analytics import router as analytics_router
+from routes.mentor import router as mentor_router
+from routes.badge import router as badge_router
 
 __all__ = [
     "student_router",
@@ -22,4 +24,6 @@ __all__ = [
     "quiz_router",
     "recommendation_router",
     "analytics_router",
+    "mentor_router",
+    "badge_router",
 ]

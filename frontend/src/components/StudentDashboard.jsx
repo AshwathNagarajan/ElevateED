@@ -9,10 +9,17 @@ import {
   TrendingUp,
   Lightbulb,
   Play,
-  ArrowRight
+  ArrowRight,
+  Compass,
+  HeartHandshake,
+  Target,
+  Sparkles,
+  Star,
+  Clock3,
+  Award
 } from 'lucide-react'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 const StudentDashboard = () => {
   const navigate = useNavigate()
@@ -21,6 +28,8 @@ const StudentDashboard = () => {
   const [recommendations, setRecommendations] = useState([])
   const [quizResults, setQuizResults] = useState([])
   const [performance, setPerformance] = useState(null)
+  const [guidancePlan, setGuidancePlan] = useState(null)
+  const [achievements, setAchievements] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -112,10 +121,36 @@ const StudentDashboard = () => {
         }
       }
 
+      let guidanceData = null
+      try {
+        const guidanceResponse = await fetch(`${API_BASE_URL}/recommendations/guidance-plan`, {
+          headers: getAuthHeaders()
+        })
+        if (guidanceResponse.ok) {
+          guidanceData = await guidanceResponse.json()
+        }
+      } catch (e) {
+        console.warn('Guidance plan endpoint not available')
+      }
+
+      let achievementsData = null
+      try {
+        const achievementsResponse = await fetch(`${API_BASE_URL}/badges/my-achievements`, {
+          headers: getAuthHeaders()
+        })
+        if (achievementsResponse.ok) {
+          achievementsData = await achievementsResponse.json()
+        }
+      } catch (e) {
+        console.warn('Achievements endpoint not available')
+      }
+
       setEnrollments(enrollmentsData)
       setRecommendations(recommendationsData)
       setQuizResults(quizData)
       setPerformance(perfData)
+      setGuidancePlan(guidanceData)
+      setAchievements(achievementsData)
       setLoading(false)
     } catch (err) {
       console.error('Dashboard fetch error:', err)
@@ -157,6 +192,17 @@ const StudentDashboard = () => {
     }
   }
 
+  const getSupportTone = (level) => {
+    switch (level) {
+      case 'high':
+        return 'bg-rose-50 text-rose-700 border-rose-200'
+      case 'medium':
+        return 'bg-amber-50 text-amber-700 border-amber-200'
+      default:
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -169,12 +215,23 @@ const StudentDashboard = () => {
   }
 
   const continueLearning = enrollments.length > 0 ? enrollments[0] : null
+  const topGuidedCourse = guidancePlan?.recommended_courses?.[0]
+  const mainNextStep = guidancePlan?.next_steps?.[0]
+  const learningPattern = guidancePlan?.learning_pattern || {}
+  const metrics = guidancePlan?.metrics || {}
+  const modelInfo = guidancePlan?.model || {}
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100 text-sm font-semibold mb-4">
+          <Sparkles size={16} />
+          Your learning guide is ready
+        </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('dashboard.welcomeBack')}</h1>
-        <p className="text-gray-600">{t('dashboard.continueLearning')}</p>
+        <p className="text-gray-600 max-w-3xl">
+          Choose one focused step, learn at your pace, and let ElevateED adjust the path as your pattern grows.
+        </p>
       </div>
 
       {error && (
@@ -183,6 +240,99 @@ const StudentDashboard = () => {
           <div>
             <h3 className="font-semibold text-red-800">{t('dashboard.errorLoading')}</h3>
             <p className="text-red-700">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {guidancePlan && (
+        <div className="mb-8 overflow-hidden rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-emerald-50 shadow-sm">
+          <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr]">
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-wrap items-center gap-3 mb-5">
+                <div className="w-12 h-12 rounded-2xl bg-sky-600 flex items-center justify-center shrink-0 shadow-sm">
+                  <Compass className="text-white" size={24} />
+                </div>
+                <span className="px-3 py-1 rounded-full bg-white border border-sky-100 text-xs font-bold uppercase text-sky-700">
+                  Personal guidance plan
+                </span>
+                <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold capitalize ${getSupportTone(guidancePlan.support_level)}`}>
+                  <HeartHandshake size={14} />
+                  {guidancePlan.support_level} support
+                </span>
+              </div>
+
+              <h2 className="text-3xl font-bold text-gray-950 mb-3">
+                {guidancePlan.suggested_track?.track || 'Learning path'}
+              </h2>
+              <p className="text-gray-700 max-w-3xl leading-relaxed">{guidancePlan.guidance_summary}</p>
+
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-xl bg-white/80 border border-white p-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Pace</p>
+                  <p className="text-lg font-bold text-gray-950 capitalize">{learningPattern.pace || 'Growing'}</p>
+                </div>
+                <div className="rounded-xl bg-white/80 border border-white p-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Quiz confidence</p>
+                  <p className="text-lg font-bold text-gray-950">{Math.round(metrics.quiz_success_rate || 0)}%</p>
+                </div>
+                <div className="rounded-xl bg-white/80 border border-white p-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Attendance</p>
+                  <p className="text-lg font-bold text-gray-950">{Math.round(metrics.attendance_rate || 0)}%</p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl bg-white/70 border border-white p-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Model signal</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {modelInfo.readiness === 'ready'
+                    ? `Ready with ${modelInfo.evidence_count || 0} learning signals`
+                    : `Still learning your pattern from ${modelInfo.evidence_count || 0} signals`}
+                </p>
+              </div>
+
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => topGuidedCourse ? navigate(`/course/${topGuidedCourse.course_id}`) : navigate('/courses')}
+                  className="btn-primary inline-flex items-center justify-center gap-2"
+                >
+                  <Target size={18} />
+                  Start guided course
+                </button>
+                <Link to="/recommendations" className="btn-secondary inline-flex items-center justify-center gap-2">
+                  <Sparkles size={18} />
+                  View guidance
+                </Link>
+              </div>
+            </div>
+
+            <div className="p-6 sm:p-8 bg-white/70 border-t xl:border-t-0 xl:border-l border-white">
+              <div className="rounded-xl bg-white border border-gray-100 p-5 mb-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <Target size={18} className="text-sky-600" />
+                  <p className="text-sm font-bold text-gray-950">Today&apos;s focused step</p>
+                </div>
+                <p className="text-lg font-bold text-gray-950 mb-2">{mainNextStep?.title || 'Pick one lesson and finish it'}</p>
+                <p className="text-sm text-gray-600">{mainNextStep?.description || 'A small completed step matters more than a long unfinished plan.'}</p>
+              </div>
+
+              <div className="space-y-3">
+                {(guidancePlan.recommended_courses || []).slice(0, 3).map((course) => (
+                  <button
+                    key={course.course_id}
+                    onClick={() => navigate(`/course/${course.course_id}`)}
+                    className="w-full rounded-xl bg-white border border-gray-100 p-4 text-left hover:border-sky-300 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-gray-950">{course.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">{course.track_type} - {course.level}</p>
+                      </div>
+                      <ArrowRight size={16} className="text-sky-600 shrink-0 mt-1" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -228,11 +378,11 @@ const StudentDashboard = () => {
             <h3 className="section-title mb-6">{t('performance.title')}</h3>
             <div className="space-y-4">
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-green-600 text-sm font-semibold mb-1">{t('performance.successRate')}</p>
+                <p className="text-green-600 text-sm font-semibold mb-1 flex items-center gap-2"><Star size={16} />{t('performance.successRate')}</p>
                 <p className="text-3xl font-bold text-green-700">{performance.success_percentage.toFixed(1)}%</p>
               </div>
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-blue-600 text-sm font-semibold mb-1">{t('performance.totalQuizzes')}</p>
+                <p className="text-blue-600 text-sm font-semibold mb-1 flex items-center gap-2"><Clock3 size={16} />{t('performance.totalQuizzes')}</p>
                 <p className="text-3xl font-bold text-blue-700">{performance.total_quizzes}</p>
               </div>
               <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
@@ -243,6 +393,35 @@ const StudentDashboard = () => {
           </div>
         )}
       </div>
+
+      {achievements && achievements.total_badges > 0 && (
+        <div className="card-lg mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div>
+              <h2 className="section-title mb-1 flex items-center gap-2">
+                <Award className="text-amber-500" size={24} />
+                Achievement shelf
+              </h2>
+              <p className="text-sm text-gray-500">{achievements.total_points} points earned from steady learning.</p>
+            </div>
+            <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 text-sm font-bold">
+              {achievements.total_badges} badges
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {achievements.badges.slice(0, 4).map((badge) => (
+              <div key={badge.id} className="rounded-xl border border-gray-100 bg-gradient-to-br from-white to-amber-50 p-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-3">
+                  <Award size={20} />
+                </div>
+                <p className="font-bold text-gray-900">{badge.name}</p>
+                <p className="text-xs text-gray-500 mt-1 line-clamp-2">{badge.description}</p>
+                <p className="text-xs font-bold text-amber-700 mt-3">+{badge.points} points</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Enrolled Courses */}
       <div className="card-lg mb-8">

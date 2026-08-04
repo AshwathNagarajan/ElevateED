@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { Search, Filter, BookOpen, Clock, Users, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 const Courses = () => {
   const { t } = useTranslation()
@@ -135,13 +135,17 @@ const Courses = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('dashboard.exploreCourses')}</h1>
-        <p className="text-gray-600">{t('dashboard.exploreCoursesDesc')}</p>
+      <div className="mb-8 rounded-lg border border-white/12 bg-white/10 p-6 shadow-2xl shadow-black/20 backdrop-blur">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-cyan-300/10 px-3 py-1 text-sm font-bold text-cyan-100">
+          <BookOpen size={16} />
+          Course discovery
+        </div>
+        <h1 className="text-4xl font-black text-white mb-2">{t('dashboard.exploreCourses')}</h1>
+        <p className="text-slate-300">{t('dashboard.exploreCoursesDesc')}</p>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8 shadow-2xl shadow-black/20">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
@@ -244,11 +248,11 @@ const Courses = () => {
                 <Link
                   key={course.id}
                   to={`/course/${course.id}`}
-                  className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-primary-300 transition-all"
-                >
-                  {/* Course Image Placeholder */}
-                  <div className="h-40 bg-gradient-to-br from-primary-100 to-secondary-100 flex items-center justify-center">
-                    <BookOpen className="text-primary-400" size={48} />
+              className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-cyan-300 transition-all hover:-translate-y-1"
+            >
+              {/* Course Image Placeholder */}
+                  <div className="h-40 bg-gradient-to-br from-cyan-300/25 via-white/10 to-amber-300/20 flex items-center justify-center">
+                    <BookOpen className="text-cyan-100" size={48} />
                   </div>
 
                   <div className="p-5">

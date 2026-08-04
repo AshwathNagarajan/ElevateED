@@ -14,19 +14,23 @@ class Settings(BaseSettings):
     # Server config
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    DEBUG: bool = True
+    DEBUG: bool = False
     
     # CORS
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost",
+        "http://127.0.0.1",
         "http://localhost:3000",
+        "http://127.0.0.1:3000",
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "http://localhost:8000",
+        "http://127.0.0.1:8000",
     ]
     
     # Database - PostgreSQL
     DB_USER: str = "postgres"
-    DB_PASSWORD: str = "dharsini@3031"
+    DB_PASSWORD: str = ""
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
     DB_NAME: str = "elevated_db"
@@ -38,7 +42,7 @@ class Settings(BaseSettings):
         return f"postgresql://{self.DB_USER}:{encoded_password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
     # API Keys and secrets
-    SECRET_KEY: str = "your-secret-key-change-in-production"
+    SECRET_KEY: str = "dev-only-secret-key-change-in-env"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     

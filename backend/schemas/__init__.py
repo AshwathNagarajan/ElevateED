@@ -1,6 +1,9 @@
 from schemas.student import StudentCreate, StudentResponse, StudentUpdate
 from schemas.auth import (
     TokenResponse,
+    TokenPairResponse,
+    RefreshTokenRequest,
+    LogoutResponse,
     TokenData,
     UserLogin,
     UserBase,
@@ -98,6 +101,9 @@ __all__ = [
     "StudentResponse",
     "StudentUpdate",
     "TokenResponse",
+    "TokenPairResponse",
+    "RefreshTokenRequest",
+    "LogoutResponse",
     "TokenData",
     "UserLogin",
     "UserBase",

@@ -5,8 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError, DatabaseError, IntegrityError
 from config import settings
-from database import init_db
-from routes import student_router, auth_router, predict_router, skill_router, attendance_router, course_router, enrollment_router, lesson_router, quiz_router, recommendation_router, analytics_router
+from routes import student_router, auth_router, predict_router, skill_router, attendance_router, course_router, enrollment_router, lesson_router, quiz_router, recommendation_router, analytics_router, mentor_router, badge_router
 import logging
 from typing import Union
 from datetime import datetime
@@ -14,9 +13,6 @@ from datetime import datetime
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Initialize database tables
-init_db()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -52,7 +48,8 @@ async def http_exception_handler(request: Request, exc: HTTPException):
                 "message": exc.detail,
                 "timestamp": datetime.utcnow().isoformat(),
                 "path": str(request.url.path)
-            }
+            },
+            "detail": exc.detail
         }
     )
 
@@ -189,6 +186,8 @@ app.include_router(lesson_router, prefix="/api")
 app.include_router(quiz_router, prefix="/api")
 app.include_router(recommendation_router, prefix="/api")
 app.include_router(analytics_router, prefix="/api")
+app.include_router(mentor_router, prefix="/api")
+app.include_router(badge_router, prefix="/api")
 
 @app.get("/")
 def read_root():

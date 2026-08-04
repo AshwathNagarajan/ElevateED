@@ -12,7 +12,7 @@ from schemas.progress import (
     ProgressStatisticsResponse,
 )
 from schemas.enrollment import EnrollmentResponse
-from routes.auth import get_current_user
+from routes.auth import get_current_user, get_student_for_user
 from services.badge_service import check_and_award_badges
 
 router = APIRouter(
@@ -99,7 +99,8 @@ def complete_lesson(
         _update_course_progress(enrollment, db, course_id, current_user.id)
     
     # Check and award badges for student achievements
-    newly_earned_badges = check_and_award_badges(current_user.id, db)
+    student = get_student_for_user(db, current_user)
+    newly_earned_badges = check_and_award_badges(student.id, db)
     
     db.refresh(lesson_progress)
     return lesson_progress
@@ -243,6 +244,8 @@ def get_course_progress_statistics(
     modules = db.query(Module).filter(Module.course_id == course_id).all()
     
     modules_progress = []
+    completed_lesson_ids = []
+    total_lessons_available = 0
     total_lessons_started = 0
     total_lessons_completed = 0
     
@@ -253,6 +256,7 @@ def get_course_progress_statistics(
         
         if total_lessons == 0:
             continue
+        total_lessons_available += total_lessons
         
         lesson_ids = [lesson.id for lesson in lessons]
         
@@ -265,6 +269,7 @@ def get_course_progress_statistics(
         ).all()
         
         completed_lessons = sum(1 for p in progress_list if p.completed)
+        completed_lesson_ids.extend(p.lesson_id for p in progress_list if p.completed)
         completion_percentage = (completed_lessons / total_lessons) * 100 if total_lessons > 0 else 0
         
         modules_progress.append({
@@ -280,14 +285,15 @@ def get_course_progress_statistics(
     
     # Calculate overall completion percentage
     overall_completion_percentage = 0.0
-    if total_lessons_started > 0:
-        overall_completion_percentage = (total_lessons_completed / total_lessons_started) * 100
+    if total_lessons_available > 0:
+        overall_completion_percentage = (total_lessons_completed / total_lessons_available) * 100
     
     return {
         "total_lessons_started": total_lessons_started,
         "total_lessons_completed": total_lessons_completed,
         "overall_completion_percentage": overall_completion_percentage,
         "modules_progress": modules_progress,
+        "completed_lesson_ids": completed_lesson_ids,
     }
 
 

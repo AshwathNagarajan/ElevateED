@@ -16,46 +16,46 @@ const Dashboard = () => {
         {/* Explore Courses */}
         <Link
           to="/courses"
-          className="group p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl hover:border-blue-400 hover:shadow-lg transition-all"
+          className="group overflow-hidden rounded-lg border border-white/12 bg-white/10 p-6 shadow-2xl shadow-black/20 backdrop-blur transition-all hover:-translate-y-1 hover:border-cyan-300/50 hover:bg-white/15"
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-              <BookOpen className="text-white" size={24} />
+            <div className="w-12 h-12 bg-cyan-300 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-950/20">
+              <BookOpen className="text-slate-950" size={24} />
             </div>
-            <ArrowRight className="text-blue-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" size={20} />
+            <ArrowRight className="text-cyan-200 group-hover:text-white group-hover:translate-x-1 transition-all" size={20} />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">{t('dashboard.exploreCourses')}</h3>
-          <p className="text-sm text-gray-600">{t('dashboard.exploreCoursesDesc')}</p>
+          <h3 className="text-lg font-black text-white mb-2">{t('dashboard.exploreCourses')}</h3>
+          <p className="text-sm text-slate-300">{t('dashboard.exploreCoursesDesc')}</p>
         </Link>
 
         {/* My Courses */}
         <Link
           to="/my-courses"
-          className="group p-6 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl hover:border-green-400 hover:shadow-lg transition-all"
+          className="group overflow-hidden rounded-lg border border-white/12 bg-white/10 p-6 shadow-2xl shadow-black/20 backdrop-blur transition-all hover:-translate-y-1 hover:border-emerald-300/50 hover:bg-white/15"
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
-              <GraduationCap className="text-white" size={24} />
+            <div className="w-12 h-12 bg-emerald-300 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-950/20">
+              <GraduationCap className="text-slate-950" size={24} />
             </div>
-            <ArrowRight className="text-green-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all" size={20} />
+            <ArrowRight className="text-emerald-200 group-hover:text-white group-hover:translate-x-1 transition-all" size={20} />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">{t('dashboard.myCoursesTitle')}</h3>
-          <p className="text-sm text-gray-600">{t('dashboard.myCoursesDesc')}</p>
+          <h3 className="text-lg font-black text-white mb-2">{t('dashboard.myCoursesTitle')}</h3>
+          <p className="text-sm text-slate-300">{t('dashboard.myCoursesDesc')}</p>
         </Link>
 
         {/* Recommendations */}
         <Link
           to="/recommendations"
-          className="group p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl hover:border-purple-400 hover:shadow-lg transition-all"
+          className="group overflow-hidden rounded-lg border border-white/12 bg-white/10 p-6 shadow-2xl shadow-black/20 backdrop-blur transition-all hover:-translate-y-1 hover:border-amber-300/50 hover:bg-white/15"
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
-              <Lightbulb className="text-white" size={24} />
+            <div className="w-12 h-12 bg-amber-300 rounded-lg flex items-center justify-center shadow-lg shadow-amber-950/20">
+              <Lightbulb className="text-slate-950" size={24} />
             </div>
-            <ArrowRight className="text-purple-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" size={20} />
+            <ArrowRight className="text-amber-200 group-hover:text-white group-hover:translate-x-1 transition-all" size={20} />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">{t('dashboard.recommendationsTitle')}</h3>
-          <p className="text-sm text-gray-600">{t('dashboard.recommendationsDesc')}</p>
+          <h3 className="text-lg font-black text-white mb-2">{t('dashboard.recommendationsTitle')}</h3>
+          <p className="text-sm text-slate-300">{t('dashboard.recommendationsDesc')}</p>
         </Link>
       </div>
 

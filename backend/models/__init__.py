@@ -7,6 +7,8 @@ from models.enrollment import Enrollment
 from models.progress import LessonProgress
 from models.quiz import Quiz, QuizSubmission
 from models.badge import Badge, StudentBadge
+from models.mentor import Mentor
+from models.token_blacklist import TokenBlacklist
 
 __all__ = [
     "Student",
@@ -23,4 +25,6 @@ __all__ = [
     "QuizSubmission",
     "Badge",
     "StudentBadge",
+    "Mentor",
+    "TokenBlacklist",
 ]

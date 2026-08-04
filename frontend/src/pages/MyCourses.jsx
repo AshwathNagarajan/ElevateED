@@ -11,7 +11,7 @@ import {
   GraduationCap
 } from 'lucide-react'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 const MyCourses = () => {
   const { t } = useTranslation()
@@ -106,9 +106,13 @@ const MyCourses = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('nav.myCourses')}</h1>
-        <p className="text-gray-600">{t('dashboard.myCoursesDesc')}</p>
+      <div className="mb-8 rounded-lg border border-white/12 bg-white/10 p-6 shadow-2xl shadow-black/20 backdrop-blur">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-200/20 bg-emerald-300/10 px-3 py-1 text-sm font-bold text-emerald-100">
+          <GraduationCap size={16} />
+          Your active learning lane
+        </div>
+        <h1 className="text-4xl font-black text-white mb-2">{t('nav.myCourses')}</h1>
+        <p className="text-slate-300">{t('dashboard.myCoursesDesc')}</p>
       </div>
 
       {/* Stats Cards */}
@@ -202,12 +206,12 @@ const MyCourses = () => {
               {filteredEnrollments.map(enrollment => (
                 <div
                   key={enrollment.id}
-                  className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-emerald-300 transition-all"
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center gap-6">
                     {/* Course Image */}
-                    <div className="w-full lg:w-48 h-32 bg-gradient-to-br from-primary-100 to-secondary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <GraduationCap className="text-primary-400" size={40} />
+                    <div className="w-full lg:w-48 h-32 bg-gradient-to-br from-emerald-300/25 via-white/10 to-cyan-300/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <GraduationCap className="text-emerald-100" size={40} />
                     </div>
 
                     {/* Course Info */}
